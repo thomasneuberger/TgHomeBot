@@ -1,4 +1,4 @@
-﻿namespace TghomeBot.SmartHome.Contract.Models;
+﻿namespace TgHomeBot.SmartHome.Contract.Models;
 
 public class MonitoredDevice
 {

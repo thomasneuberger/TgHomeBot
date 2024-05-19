@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TghomeBot.SmartHome.Contract;
+using TgHomeBot.SmartHome.Contract;
 
-namespace TghomeBot.SmartHome.HomeAssistant;
+namespace TgHomeBot.SmartHome.HomeAssistant;
 
 public static class Bootstrap
 {

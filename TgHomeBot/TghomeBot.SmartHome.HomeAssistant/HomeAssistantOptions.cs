@@ -1,4 +1,4 @@
-﻿namespace TghomeBot.SmartHome.HomeAssistant;
+﻿namespace TgHomeBot.SmartHome.HomeAssistant;
 
 public class HomeAssistantOptions
 {

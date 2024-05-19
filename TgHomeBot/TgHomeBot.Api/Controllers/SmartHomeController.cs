@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using TgHomeBot.Api.Options;
-using TghomeBot.SmartHome.Contract;
-using TghomeBot.SmartHome.Contract.Models;
+using TgHomeBot.SmartHome.Contract;
+using TgHomeBot.SmartHome.Contract.Models;
 
 namespace TgHomeBot.Api.Controllers;
 
@@ -22,5 +22,22 @@ public class SmartHomeController(ISmartHomeConnector smartHomeConnector) : Contr
     {
         var devices = await smartHomeConnector.GetDevices(options.Value.MonitoredDevices);
         return Ok(devices);
+    }
+
+    [HttpGet("monitor/state")]
+    public ActionResult<MonitorState> GetMonitorState([FromServices] IEnumerable<IHostedService> services)
+    {
+        var monitoringService = services
+            .OfType<MonitoringService>()
+            .FirstOrDefault();
+
+        if (monitoringService is not null)
+        {
+            return Ok(monitoringService.GetState());
+        }
+        else
+        {
+            return NotFound();
+        }
     }
 }

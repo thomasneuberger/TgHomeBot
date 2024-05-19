@@ -1,4 +1,4 @@
-﻿using TghomeBot.SmartHome.Contract.Models;
+﻿using TgHomeBot.SmartHome.Contract.Models;
 
 namespace TgHomeBot.Api.Options;
 

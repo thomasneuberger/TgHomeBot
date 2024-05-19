@@ -1,13 +1,15 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using TghomeBot.SmartHome.Contract;
-using TghomeBot.SmartHome.Contract.Models;
-using TghomeBot.SmartHome.HomeAssistant.Models;
+using TgHomeBot.SmartHome.Contract;
+using TgHomeBot.SmartHome.Contract.Models;
+using TgHomeBot.SmartHome.HomeAssistant.Models;
 
-namespace TghomeBot.SmartHome.HomeAssistant;
+namespace TgHomeBot.SmartHome.HomeAssistant;
 
-internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient) : ISmartHomeConnector
+internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, ILogger<HomeAssistantMonitor> monitorLogger)
+    : ISmartHomeConnector
 {
     public async Task<IReadOnlyList<SmartDevice>> GetDevices()
     {
@@ -29,6 +31,12 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         return devices;
     }
 
+    public ISmartHomeMonitor CreateMonitorAsync(IReadOnlyList<MonitoredDevice> devices, CancellationToken cancellationToken)
+    {
+        var monitor = new HomeAssistantMonitor(devices, options, monitorLogger);
+        return monitor;
+    }
+
     private async Task<string> CallApi(string endpoint, HttpMethod method)
     {
         var url = options.Value.BaseUrl.TrimEnd('/') + "/api/" + endpoint;
@@ -46,6 +54,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
     {
         return new SmartDevice
         {
+            Id = d.EntityId,
             Name = d.Attributes.FriendlyName, 
             State = string.IsNullOrWhiteSpace(d.Attributes.UnitOfMeasurement) ? d.State : $"{d.State} {d.Attributes.UnitOfMeasurement}"
         };

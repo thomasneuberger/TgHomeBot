@@ -1,15 +1,15 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace TghomeBot.SmartHome.HomeAssistant.Models;
+namespace TgHomeBot.SmartHome.HomeAssistant.Models;
 
 public class HomeAssistantDevice
 {
     [JsonPropertyName("entity_id")]
-    public required string EntityId { get; set; }
+    public required string EntityId { get; init; }
 
     [JsonPropertyName("state")]
-    public required string State { get; set; }
+    public required string State { get; init; }
 
     [JsonPropertyName("attributes")]
-    public required HomeAssistantDeviceAttributes Attributes { get; set; }
+    public required HomeAssistantDeviceAttributes Attributes { get; init; }
 }

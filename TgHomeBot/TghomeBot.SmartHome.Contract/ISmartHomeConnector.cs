@@ -1,9 +1,10 @@
-﻿using TghomeBot.SmartHome.Contract.Models;
+﻿using TgHomeBot.SmartHome.Contract.Models;
 
-namespace TghomeBot.SmartHome.Contract;
+namespace TgHomeBot.SmartHome.Contract;
 
 public interface ISmartHomeConnector
 {
     Task<IReadOnlyList<SmartDevice>> GetDevices();
     Task<IReadOnlyList<SmartDevice>> GetDevices(IReadOnlyList<MonitoredDevice> requestedDevices);
+    ISmartHomeMonitor CreateMonitorAsync(IReadOnlyList<MonitoredDevice> devices, CancellationToken cancellationToken);
 }

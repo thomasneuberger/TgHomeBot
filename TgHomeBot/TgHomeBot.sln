@@ -4,9 +4,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.Api", "TgHomeBot.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SmartHome", "SmartHome", "{9DA5B2DC-7A6D-42AC-BD77-E848409EE693}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.SmartHome.HomeAssistant", "TghomeBot.SmartHome.HomeAssistant\TghomeBot.SmartHome.HomeAssistant.csproj", "{CD2F5EE5-CD6F-4E0D-9432-07DDC880DC64}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.SmartHome.HomeAssistant", "TgHomeBot.SmartHome.HomeAssistant\TgHomeBot.SmartHome.HomeAssistant.csproj", "{CD2F5EE5-CD6F-4E0D-9432-07DDC880DC64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.SmartHome.Contract", "TghomeBot.SmartHome.Contract\TghomeBot.SmartHome.Contract.csproj", "{F66BF70B-D03E-44A4-8E36-B78EDA8F9BE6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.SmartHome.Contract", "TgHomeBot.SmartHome.Contract\TgHomeBot.SmartHome.Contract.csproj", "{F66BF70B-D03E-44A4-8E36-B78EDA8F9BE6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
