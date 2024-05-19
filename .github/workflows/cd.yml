@@ -53,5 +53,5 @@ jobs:
         context: .
         file: ./TgHomeBot.Api/Dockerfile
         push: true
-        tags: ${{ steps.metaWeb.outputs.tags }}
-        labels: ${{ steps.metaWeb.outputs.labels }}
+        tags: ${{ steps.metaApi.outputs.tags }}
+        labels: ${{ steps.metaApi.outputs.labels }}
