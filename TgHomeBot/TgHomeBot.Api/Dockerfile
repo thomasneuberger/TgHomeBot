@@ -2,20 +2,21 @@
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["TgHomeBot.Api/TgHomeBot.Api.csproj", "TgHomeBot.Api/"]
+COPY ["TgHomeBot.SmartHome.Contract/TgHomeBot.SmartHome.Contract.csproj", "TgHomeBot.SmartHome.Contract/"]
+COPY ["TgHomeBot.SmartHome.HomeAssistant/TgHomeBot.SmartHome.HomeAssistant.csproj", "TgHomeBot.SmartHome.HomeAssistant/"]
 RUN dotnet restore "TgHomeBot.Api/TgHomeBot.Api.csproj"
 COPY . .
 WORKDIR "/src/TgHomeBot.Api"
-RUN dotnet build "TgHomeBot.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "TgHomeBot.Api.csproj" -c $BUILD_CONFIGURATION --no-restore
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "TgHomeBot.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "TgHomeBot.Api.csproj" -c $BUILD_CONFIGURATION --no-build --no-restore -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

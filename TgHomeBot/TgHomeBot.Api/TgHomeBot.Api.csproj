@@ -20,8 +20,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\TghomeBot.SmartHome.Contract\TghomeBot.SmartHome.Contract.csproj" />
-      <ProjectReference Include="..\TghomeBot.SmartHome.HomeAssistant\TghomeBot.SmartHome.HomeAssistant.csproj" />
+      <ProjectReference Include="..\TgHomeBot.SmartHome.Contract\TgHomeBot.SmartHome.Contract.csproj" />
+      <ProjectReference Include="..\TgHomeBot.SmartHome.HomeAssistant\TgHomeBot.SmartHome.HomeAssistant.csproj" />
     </ItemGroup>
 
     <ItemGroup>
