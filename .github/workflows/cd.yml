@@ -50,8 +50,8 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
       with:
-        context: ./TgHomeBot/
-        file: ./TgHomeBot/TgHomeBot.Api/Dockerfile
+        context: .
+        file: ./TgHomeBot.Api/Dockerfile
         push: true
         tags: ${{ steps.metaApi.outputs.tags }}
         labels: ${{ steps.metaApi.outputs.labels }}
