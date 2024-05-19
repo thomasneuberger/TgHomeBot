@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\TghomeBot.SmartHome.Contract\TghomeBot.SmartHome.Contract.csproj" />
+      <ProjectReference Include="..\TgHomeBot.SmartHome.Contract\TgHomeBot.SmartHome.Contract.csproj" />
     </ItemGroup>
 
     <ItemGroup>
