@@ -1,0 +1,6 @@
+@TgHomeBot.Api_HostAddress = http://localhost:5271
+
+GET {{TgHomeBot.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
