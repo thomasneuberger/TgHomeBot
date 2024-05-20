@@ -1,12 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.Api", "TgHomeBot.Api\TgHomeBot.Api.csproj", "{BD769113-658A-4B8E-8DFF-70292E5EAA89}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TgHomeBot.Api", "TgHomeBot.Api\TgHomeBot.Api.csproj", "{BD769113-658A-4B8E-8DFF-70292E5EAA89}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SmartHome", "SmartHome", "{9DA5B2DC-7A6D-42AC-BD77-E848409EE693}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.SmartHome.HomeAssistant", "TgHomeBot.SmartHome.HomeAssistant\TgHomeBot.SmartHome.HomeAssistant.csproj", "{CD2F5EE5-CD6F-4E0D-9432-07DDC880DC64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TgHomeBot.SmartHome.HomeAssistant", "TgHomeBot.SmartHome.HomeAssistant\TgHomeBot.SmartHome.HomeAssistant.csproj", "{CD2F5EE5-CD6F-4E0D-9432-07DDC880DC64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.SmartHome.Contract", "TgHomeBot.SmartHome.Contract\TgHomeBot.SmartHome.Contract.csproj", "{F66BF70B-D03E-44A4-8E36-B78EDA8F9BE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TgHomeBot.SmartHome.Contract", "TgHomeBot.SmartHome.Contract\TgHomeBot.SmartHome.Contract.csproj", "{F66BF70B-D03E-44A4-8E36-B78EDA8F9BE6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Notifications", "Notifications", "{2C4C866E-B029-4B03-8D74-7BDCEB80CE48}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.Notifications.Telegram", "TgHomeBot.Notifications.Telegram\TgHomeBot.Notifications.Telegram.csproj", "{7ABC0A03-A823-4C7E-81CF-D71C91BA094A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.Notifications.Contract", "TgHomeBot.Notifications.Contract\TgHomeBot.Notifications.Contract.csproj", "{1BB748C2-C765-4EF8-9B67-B670AA117033}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TgHomeBot.Common.Contract", "TgHomeBot.Common.Contract\TgHomeBot.Common.Contract.csproj", "{D7AA1C3B-5600-4EDA-A755-337D48327A79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,9 +37,29 @@ Global
 		{F66BF70B-D03E-44A4-8E36-B78EDA8F9BE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F66BF70B-D03E-44A4-8E36-B78EDA8F9BE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F66BF70B-D03E-44A4-8E36-B78EDA8F9BE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7ABC0A03-A823-4C7E-81CF-D71C91BA094A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7ABC0A03-A823-4C7E-81CF-D71C91BA094A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7ABC0A03-A823-4C7E-81CF-D71C91BA094A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7ABC0A03-A823-4C7E-81CF-D71C91BA094A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BB748C2-C765-4EF8-9B67-B670AA117033}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BB748C2-C765-4EF8-9B67-B670AA117033}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BB748C2-C765-4EF8-9B67-B670AA117033}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BB748C2-C765-4EF8-9B67-B670AA117033}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7AA1C3B-5600-4EDA-A755-337D48327A79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7AA1C3B-5600-4EDA-A755-337D48327A79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7AA1C3B-5600-4EDA-A755-337D48327A79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7AA1C3B-5600-4EDA-A755-337D48327A79}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CD2F5EE5-CD6F-4E0D-9432-07DDC880DC64} = {9DA5B2DC-7A6D-42AC-BD77-E848409EE693}
 		{F66BF70B-D03E-44A4-8E36-B78EDA8F9BE6} = {9DA5B2DC-7A6D-42AC-BD77-E848409EE693}
+		{7ABC0A03-A823-4C7E-81CF-D71C91BA094A} = {2C4C866E-B029-4B03-8D74-7BDCEB80CE48}
+		{1BB748C2-C765-4EF8-9B67-B670AA117033} = {2C4C866E-B029-4B03-8D74-7BDCEB80CE48}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {85169A93-9764-46B8-8DC2-612DC8DF0932}
 	EndGlobalSection
 EndGlobal
