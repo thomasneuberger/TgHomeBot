@@ -2,13 +2,14 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using TgHomeBot.Notifications.Contract;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
 using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
-internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, ILogger<HomeAssistantMonitor> monitorLogger)
+internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, INotificationConnector notificationConnector, ILogger<HomeAssistantMonitor> monitorLogger)
     : ISmartHomeConnector
 {
     public async Task<IReadOnlyList<SmartDevice>> GetDevices()
@@ -33,7 +34,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
 
     public ISmartHomeMonitor CreateMonitorAsync(IReadOnlyList<MonitoredDevice> devices, CancellationToken cancellationToken)
     {
-        var monitor = new HomeAssistantMonitor(devices, options, monitorLogger);
+        var monitor = new HomeAssistantMonitor(devices, options, notificationConnector, monitorLogger);
         return monitor;
     }
 
@@ -55,7 +56,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         return new SmartDevice
         {
             Id = d.EntityId,
-            Name = d.Attributes.FriendlyName, 
+            Name = d.Attributes.FriendlyName,
             State = string.IsNullOrWhiteSpace(d.Attributes.UnitOfMeasurement) ? d.State : $"{d.State} {d.Attributes.UnitOfMeasurement}"
         };
     }

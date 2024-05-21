@@ -17,7 +17,7 @@ builder.Services.AddHomeAssistant(builder.Configuration);
 
 builder.Services.AddOptions<SmartHomeOptions>().Configure(options => builder.Configuration.GetSection("SmartHome").Bind(options));
 builder.Services.AddSingleton<IHostedService, MonitoringService>();
-builder.Services.AddSingleton<IHostedService, PollingService>();
+//builder.Services.AddSingleton<IHostedService, PollingService>();
 
 builder.Services.AddTelegram(builder.Configuration);
 

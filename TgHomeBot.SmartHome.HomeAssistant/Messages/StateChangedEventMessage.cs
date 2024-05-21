@@ -3,11 +3,8 @@ using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant.Messages;
 
-public class StateChangedEventMessage : EventMessage
+public class StateChangedEventMessage : EventMessage<StateChangedEventMessage.StateChangedData>
 {
-    [JsonPropertyName("data")]
-    public required StateChangedData Data { get; init; }
-
     public class StateChangedData
     {
         [JsonPropertyName("entity_id")]

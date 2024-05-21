@@ -142,7 +142,7 @@ internal class TelegramConnector : INotificationConnector
 	{
 		foreach (var registeredChat in _registeredChats)
 		{
-			await _botClient.SendTextMessageAsync(registeredChat.ChatId, message, parseMode: ParseMode.MarkdownV2);
+			await _botClient.SendTextMessageAsync(registeredChat.ChatId, message, parseMode: ParseMode.Html);
 
 			_logger.LogInformation("Message sent to chat {ChatId} with user {User}: {Message}", registeredChat.ChatId, registeredChat.Username, message);
 		}
