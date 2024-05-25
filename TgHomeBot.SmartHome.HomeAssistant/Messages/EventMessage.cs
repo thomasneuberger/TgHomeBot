@@ -2,7 +2,7 @@
 
 namespace TgHomeBot.SmartHome.HomeAssistant.Messages;
 
-public class EventMessage : IMessage
+public class EventMessage<TData> : IMessage
 {
     [JsonPropertyName("type")]
     public required string Type { get; init; }
@@ -10,12 +10,6 @@ public class EventMessage : IMessage
     [JsonPropertyName("id")]
     public required int Id { get; init; }
 
-    [JsonPropertyName("event_type")]
-    public required string EventType { get; init; }
-
-    [JsonPropertyName("time_fired")]
-    public required DateTimeOffset TimeFired { get; init; }
-
-    [JsonPropertyName("origin")]
-    public required string Origin { get; init; }
+    [JsonPropertyName("event")]
+    public required Event<TData> Event { get; set; }
 }

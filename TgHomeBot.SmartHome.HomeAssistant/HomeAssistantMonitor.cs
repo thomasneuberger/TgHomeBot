@@ -3,13 +3,15 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using TgHomeBot.Notifications.Contract;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
 using TgHomeBot.SmartHome.HomeAssistant.Messages;
+using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
-public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptions<HomeAssistantOptions> options, ILogger<HomeAssistantMonitor> logger)
+public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptions<HomeAssistantOptions> options, INotificationConnector notificationConnector, ILogger<HomeAssistantMonitor> logger)
     : ISmartHomeMonitor
 {
     private readonly ClientWebSocket _webSocket = new();
@@ -78,11 +80,11 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
                 var resultMessage = JsonSerializer.Deserialize<ResultMessage>(message)!;
                 if (resultMessage.Success)
                 {
-                    logger.LogInformation("Request {Id} successful: {Message}", resultMessage.Id, message);                    
+                    logger.LogInformation("Request {Id} successful: {Message}", resultMessage.Id, message);
                 }
                 else
                 {
-                    logger.LogInformation("Request {Id} not successful: {Message}", resultMessage.Id, message);     
+                    logger.LogInformation("Request {Id} not successful: {Message}", resultMessage.Id, message);
                 }
                 break;
             case "event":
@@ -96,29 +98,60 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
 
     private void ProcessEvent(string message)
     {
-        var eventMessage = JsonSerializer.Deserialize<EventMessage>(message)!;
+        var eventMessage = JsonSerializer.Deserialize<EventMessage<object>>(message)!;
 
-        switch (eventMessage.EventType)
+        switch (eventMessage.Event.EventType)
         {
             case "state_changed":
                 var stateChangedEvent = JsonSerializer.Deserialize<StateChangedEventMessage>(message)!;
-                if (devices.Any(d => d.Id == stateChangedEvent.Data.EntityId))
+                var monitoredDevice = devices.FirstOrDefault(d => d.Id == stateChangedEvent.Event.Data.EntityId);
+                if (monitoredDevice is not null)
                 {
+                    var oldState = GetState(monitoredDevice, stateChangedEvent.Event.Data.OldState.State);
+                    var newState = GetState(monitoredDevice, stateChangedEvent.Event.Data.NewState.State);
                     logger.LogInformation(
-                        "Device {EntityId} changed state from {OldState} to {NewState}",
-                        stateChangedEvent.Data.EntityId,
-                        stateChangedEvent.Data.OldState.State,
-                        stateChangedEvent.Data.NewState.State);
+                        "Device {Device} changed state from {OldStateValue} ({OldState}) to {NewStateValue} ({NewState})",
+                        monitoredDevice.Name,
+                        stateChangedEvent.Event.Data.OldState.State,
+                        oldState,
+                        stateChangedEvent.Event.Data.NewState.State,
+                        newState);
+
+                    if (oldState != newState)
+                    {
+                        notificationConnector.SendAsync($"Device {monitoredDevice.Name} changed state from {oldState} to {newState}");
+                    }
                 }
                 else
                 {
-                    logger.LogDebug("Changed device {EntityId} not monitored", stateChangedEvent.Data.EntityId);
+                    logger.LogDebug("Changed device {EntityId} not monitored", stateChangedEvent.Event.Data.EntityId);
                 }
                 break;
             default:
-                logger.LogError("Unknown event type {Type}: {Event}", eventMessage.EventType, message);
+                logger.LogError("Unknown event type {Type}: {Event}", eventMessage.Event.EventType, message);
                 break;
         }
+    }
+
+    private static DeviceState GetState(MonitoredDevice device, string state)
+    {
+        if (!float.TryParse(state, out var value))
+        {
+            return DeviceState.Unknown;
+        }
+
+        if (value > device.RunningThreshold)
+        {
+            return DeviceState.Running;
+        }
+
+        if (value < device.OffThreshold)
+        {
+            return DeviceState.Off;
+        }
+
+        return DeviceState.Waiting;
+
     }
 
     private async Task SendMessageAsync<TMessage>(TMessage message)
