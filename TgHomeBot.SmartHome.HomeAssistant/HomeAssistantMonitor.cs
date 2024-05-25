@@ -52,47 +52,59 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
 
     private async Task ProcessMessage(string message)
     {
-        var genericMessage = JsonSerializer.Deserialize<GenericMessage>(message)!;
-
-        switch (genericMessage.Type)
+        if (string.IsNullOrWhiteSpace(message))
         {
-            case "auth_required":
-                var authRequiredMessage = JsonSerializer.Deserialize<VersionMessage>(message)!;
-                logger.LogInformation("Authentication requested: {Version}", authRequiredMessage.HomeAssistantVersion);
-                await SendMessageAsync(new AuthMessage(options.Value.Token));
-                break;
-            case "auth_ok":
-                var authOkMessage = JsonSerializer.Deserialize<VersionMessage>(message)!;
-                logger.LogInformation("Authentication successful: {Version}", authOkMessage.HomeAssistantVersion);
-                var subscribeMessage = new SubscribeMessage
-                {
-                    Id = SubscribeMessage.StateChangedId,
-                    EventType = SubscribeMessage.StateChangedEventType
-                };
-                logger.LogInformation("Subscribe to state changed events");
-                await SendMessageAsync(subscribeMessage);
-                break;
-            case "auth_invalid":
-                var authInvalidMessage = JsonSerializer.Deserialize<AuthInvalidMessage>(message)!;
-                logger.LogError("Authentication invalid: {Message}", authInvalidMessage.Message);
-                break;
-            case "result":
-                var resultMessage = JsonSerializer.Deserialize<ResultMessage>(message)!;
-                if (resultMessage.Success)
-                {
-                    logger.LogInformation("Request {Id} successful: {Message}", resultMessage.Id, message);
-                }
-                else
-                {
-                    logger.LogInformation("Request {Id} not successful: {Message}", resultMessage.Id, message);
-                }
-                break;
-            case "event":
-                ProcessEvent(message);
-                break;
-            default:
-                logger.LogError("Unknown message of type {Type}: {Message}", genericMessage.Type, message);
-                break;
+            return;
+        }
+
+        try
+        {
+            var genericMessage = JsonSerializer.Deserialize<GenericMessage>(message)!;
+
+            switch (genericMessage.Type)
+            {
+                case "auth_required":
+                    var authRequiredMessage = JsonSerializer.Deserialize<VersionMessage>(message)!;
+                    logger.LogInformation("Authentication requested: {Version}", authRequiredMessage.HomeAssistantVersion);
+                    await SendMessageAsync(new AuthMessage(options.Value.Token));
+                    break;
+                case "auth_ok":
+                    var authOkMessage = JsonSerializer.Deserialize<VersionMessage>(message)!;
+                    logger.LogInformation("Authentication successful: {Version}", authOkMessage.HomeAssistantVersion);
+                    var subscribeMessage = new SubscribeMessage
+                    {
+                        Id = SubscribeMessage.StateChangedId,
+                        EventType = SubscribeMessage.StateChangedEventType
+                    };
+                    logger.LogInformation("Subscribe to state changed events");
+                    await SendMessageAsync(subscribeMessage);
+                    break;
+                case "auth_invalid":
+                    var authInvalidMessage = JsonSerializer.Deserialize<AuthInvalidMessage>(message)!;
+                    logger.LogError("Authentication invalid: {Message}", authInvalidMessage.Message);
+                    break;
+                case "result":
+                    var resultMessage = JsonSerializer.Deserialize<ResultMessage>(message)!;
+                    if (resultMessage.Success)
+                    {
+                        logger.LogInformation("Request {Id} successful: {Message}", resultMessage.Id, message);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Request {Id} not successful: {Message}", resultMessage.Id, message);
+                    }
+                    break;
+                case "event":
+                    ProcessEvent(message);
+                    break;
+                default:
+                    logger.LogError("Unknown message of type {Type}: {Message}", genericMessage.Type, message);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error processing message: {Exception}", ex);
         }
     }
 
@@ -107,19 +119,32 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
                 var monitoredDevice = devices.FirstOrDefault(d => d.Id == stateChangedEvent.Event.Data.EntityId);
                 if (monitoredDevice is not null)
                 {
-                    var oldState = GetState(monitoredDevice, stateChangedEvent.Event.Data.OldState.State);
-                    var newState = GetState(monitoredDevice, stateChangedEvent.Event.Data.NewState.State);
-                    logger.LogInformation(
-                        "Device {Device} changed state from {OldStateValue} ({OldState}) to {NewStateValue} ({NewState})",
-                        monitoredDevice.Name,
-                        stateChangedEvent.Event.Data.OldState.State,
-                        oldState,
-                        stateChangedEvent.Event.Data.NewState.State,
-                        newState);
-
-                    if (oldState != newState)
+                    if (monitoredDevice.StateThresholds is not null)
                     {
-                        notificationConnector.SendAsync($"Device {monitoredDevice.Name} changed state from {oldState} to {newState}");
+                        var oldState = GetState(monitoredDevice.StateThresholds, stateChangedEvent.Event.Data.OldState.State);
+                        var newState = GetState(monitoredDevice.StateThresholds, stateChangedEvent.Event.Data.NewState.State);
+                        logger.LogInformation(
+                            "Device {Device} changed state from {OldStateValue} ({OldState}) to {NewStateValue} ({NewState})",
+                            monitoredDevice.Name,
+                            stateChangedEvent.Event.Data.OldState.State,
+                            oldState,
+                            stateChangedEvent.Event.Data.NewState.State,
+                            newState);
+
+                        if (oldState != newState)
+                        {
+                            notificationConnector.SendAsync($"Device {monitoredDevice.Name} changed state from {oldState} to {newState}");
+                        }
+                    }
+                    else
+                    {
+                        var oldState = stateChangedEvent.Event.Data.OldState.State;
+                        var newState = stateChangedEvent.Event.Data.NewState.State;
+                        logger.LogInformation(
+                            "Device {Device} changed state from {OldStateValue} to {NewStateValue}",
+                            monitoredDevice.Name,
+                            oldState,
+                            newState);
                     }
                 }
                 else
@@ -133,19 +158,19 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
         }
     }
 
-    private static DeviceState GetState(MonitoredDevice device, string state)
+    private static DeviceState GetState(DeviceStateThresholds deviceThresholds, string state)
     {
         if (!float.TryParse(state, out var value))
         {
             return DeviceState.Unknown;
         }
 
-        if (value > device.RunningThreshold)
+        if (value > deviceThresholds.RunningThreshold)
         {
             return DeviceState.Running;
         }
 
-        if (value < device.OffThreshold)
+        if (value < deviceThresholds.OffThreshold)
         {
             return DeviceState.Off;
         }
