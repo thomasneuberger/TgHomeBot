@@ -9,6 +9,9 @@ WORKDIR /src
 COPY ["TgHomeBot.Api/TgHomeBot.Api.csproj", "TgHomeBot.Api/"]
 COPY ["TgHomeBot.SmartHome.Contract/TgHomeBot.SmartHome.Contract.csproj", "TgHomeBot.SmartHome.Contract/"]
 COPY ["TgHomeBot.SmartHome.HomeAssistant/TgHomeBot.SmartHome.HomeAssistant.csproj", "TgHomeBot.SmartHome.HomeAssistant/"]
+COPY ["TgHomeBot.Notifications.Contract/TgHomeBot.Notifications.Contract.csproj", "TgHomeBot.Notifications.Contract/"]
+COPY ["TgHomeBot.Notifications.Telegram/TgHomeBot.Notifications.Telegram.csproj", "TgHomeBot.Notifications.Telegram/"]
+COPY ["TgHomeBot.Common.Contract/TgHomeBot.Common.Contract.csproj", "TgHomeBot.Common.Contract/"]
 RUN dotnet restore "TgHomeBot.Api/TgHomeBot.Api.csproj"
 COPY . .
 WORKDIR "/src/TgHomeBot.Api"
