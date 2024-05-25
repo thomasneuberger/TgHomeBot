@@ -7,6 +7,7 @@ using TgHomeBot.Notifications.Contract;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
 using TgHomeBot.SmartHome.HomeAssistant.Messages;
+using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
@@ -106,13 +107,20 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
                 var monitoredDevice = devices.FirstOrDefault(d => d.Id == stateChangedEvent.Event.Data.EntityId);
                 if (monitoredDevice is not null)
                 {
+                    var oldState = GetState(monitoredDevice, stateChangedEvent.Event.Data.OldState.State);
+                    var newState = GetState(monitoredDevice, stateChangedEvent.Event.Data.NewState.State);
                     logger.LogInformation(
-                        "Device {Device} changed state from {OldState} to {NewState}",
+                        "Device {Device} changed state from {OldStateValue} ({OldState}) to {NewStateValue} ({NewState})",
                         monitoredDevice.Name,
                         stateChangedEvent.Event.Data.OldState.State,
-                        stateChangedEvent.Event.Data.NewState.State);
+                        oldState,
+                        stateChangedEvent.Event.Data.NewState.State,
+                        newState);
 
-                    notificationConnector.SendAsync($"Device {monitoredDevice.Name} changed state from {stateChangedEvent.Event.Data.OldState.State} to {stateChangedEvent.Event.Data.NewState.State}");
+                    if (oldState != newState)
+                    {
+                        notificationConnector.SendAsync($"Device {monitoredDevice.Name} changed state from {oldState} to {newState}");
+                    }
                 }
                 else
                 {
@@ -123,6 +131,27 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
                 logger.LogError("Unknown event type {Type}: {Event}", eventMessage.Event.EventType, message);
                 break;
         }
+    }
+
+    private static DeviceState GetState(MonitoredDevice device, string state)
+    {
+        if (!float.TryParse(state, out var value))
+        {
+            return DeviceState.Unknown;
+        }
+
+        if (value > device.RunningThreshold)
+        {
+            return DeviceState.Running;
+        }
+
+        if (value < device.OffThreshold)
+        {
+            return DeviceState.Off;
+        }
+
+        return DeviceState.Waiting;
+
     }
 
     private async Task SendMessageAsync<TMessage>(TMessage message)
