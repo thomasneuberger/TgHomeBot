@@ -1,15 +1,31 @@
 using System.Text.Json.Serialization;
+using Serilog;
+using Serilog.Templates;
+using Serilog.Templates.Themes;
 using TgHomeBot.Api;
 using TgHomeBot.Api.Options;
 using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Telegram;
 using TgHomeBot.SmartHome.HomeAssistant;
 
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateLogger();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddLogging();
+builder.Services.AddSerilog((services, options) =>
+{
+    options
+        .ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services)
+        .WriteTo.Console(new ExpressionTemplate(
+            // Include trace and span ids when present.
+            "[{@t:HH:mm:ss} {@l:u3}{#if @tr is not null} {SourceContext} ({substring(@tr,0,4)}:{substring(@sp,0,4)}){#end}] {@m}\n{@x}",
+            theme: TemplateTheme.Code));
+});
 
 builder.Services.AddOptions<FileStorageOptions>().Configure(options => builder.Configuration.GetSection("FileStorage").Bind(options));
 
@@ -32,6 +48,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+//app.UseSerilogRequestLogging();
 
 // Configure the HTTP request pipeline.
 app.UseSwagger();
