@@ -131,9 +131,9 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
                             stateChangedEvent.Event.Data.NewState.State,
                             newState);
 
-                        if (oldState != newState)
+                        if (oldState == DeviceState.Running && (newState != DeviceState.Running))
                         {
-                            notificationConnector.SendAsync($"Device {monitoredDevice.Name} changed state from {oldState} to {newState}");
+                            notificationConnector.SendAsync($"{monitoredDevice.Name} ist fertig.");
                         }
                     }
                     else
