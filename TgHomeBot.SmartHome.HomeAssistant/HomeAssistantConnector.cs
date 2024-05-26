@@ -1,22 +1,22 @@
-﻿using System.Net.Http.Headers;
-using System.Text.Json;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using TgHomeBot.Notifications.Contract;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
 using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
-internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, INotificationConnector notificationConnector, ILogger<HomeAssistantMonitor> monitorLogger)
+internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, IMediator mediator, ILogger<HomeAssistantMonitor> monitorLogger)
     : ISmartHomeConnector
 {
     public async Task<IReadOnlyList<SmartDevice>> GetDevices()
     {
         var response = await CallApi("states", HttpMethod.Get);
         var devices = JsonSerializer.Deserialize<HomeAssistantDevice[]>(response)!;
-        return devices.Select(d => Convert(d)).ToArray();
+        return devices.Select(ConvertDevice).ToArray();
     }
 
     public async Task<IReadOnlyList<SmartDevice>> GetDevices(IReadOnlyList<MonitoredDevice> requestedDevices)
@@ -26,7 +26,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         {
             var response = await CallApi($"states/{requestedDevice.Id}", HttpMethod.Get);
             var device = JsonSerializer.Deserialize<HomeAssistantDevice>(response)!;
-            devices.Add(Convert(device));
+            devices.Add(ConvertDevice(device));
         }
 
         return devices;
@@ -34,7 +34,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
 
     public ISmartHomeMonitor CreateMonitorAsync(IReadOnlyList<MonitoredDevice> devices, CancellationToken cancellationToken)
     {
-        var monitor = new HomeAssistantMonitor(devices, options, notificationConnector, monitorLogger);
+        var monitor = new HomeAssistantMonitor(devices, options, mediator, monitorLogger);
         return monitor;
     }
 
@@ -51,7 +51,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         return await response.Content.ReadAsStringAsync();
     }
 
-    private static SmartDevice Convert(HomeAssistantDevice d)
+    private static SmartDevice ConvertDevice(HomeAssistantDevice d)
     {
         return new SmartDevice
         {

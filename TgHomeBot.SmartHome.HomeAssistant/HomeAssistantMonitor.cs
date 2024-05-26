@@ -1,9 +1,10 @@
-﻿using System.Net.WebSockets;
-using System.Text;
-using System.Text.Json;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using TgHomeBot.Notifications.Contract;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+using TgHomeBot.Notifications.Contract.Requests;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
 using TgHomeBot.SmartHome.HomeAssistant.Messages;
@@ -11,7 +12,7 @@ using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
-public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptions<HomeAssistantOptions> options, INotificationConnector notificationConnector, ILogger<HomeAssistantMonitor> logger)
+public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptions<HomeAssistantOptions> options, IMediator mediator, ILogger<HomeAssistantMonitor> logger)
     : ISmartHomeMonitor
 {
     private readonly ClientWebSocket _webSocket = new();
@@ -133,7 +134,7 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
 
                         if (oldState == DeviceState.Running && (newState != DeviceState.Running))
                         {
-                            notificationConnector.SendAsync($"{monitoredDevice.Name} ist fertig.");
+                            mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist fertig."));
                         }
                     }
                     else

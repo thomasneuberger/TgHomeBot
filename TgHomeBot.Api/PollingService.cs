@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Options;
+﻿using MediatR;
+using Microsoft.Extensions.Options;
 using TgHomeBot.Api.Options;
-using TgHomeBot.Notifications.Contract;
+using TgHomeBot.Notifications.Contract.Requests;
 using TgHomeBot.SmartHome.Contract;
 
 namespace TgHomeBot.Api;
@@ -25,7 +26,7 @@ public class PollingService(IServiceProvider services, IOptions<SmartHomeOptions
             using var scope = services.CreateScope();
             var smartHomeConnector = scope.ServiceProvider.GetRequiredService<ISmartHomeConnector>();
             var deviceStates = await smartHomeConnector.GetDevices(options.Value.MonitoredDevices);
-            var notificationConnector = scope.ServiceProvider.GetRequiredService<INotificationConnector>();
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
             foreach (var deviceState in deviceStates)
             {
                 logger.LogInformation("State of device {EntityId}: {State}", deviceState.Id, deviceState.State);
@@ -33,7 +34,7 @@ public class PollingService(IServiceProvider services, IOptions<SmartHomeOptions
                 {
                     logger.LogInformation("State of device {EntityId} changed from {OldState} to {NewState}", deviceState.Id, lastState, deviceState.State);
 
-                    await notificationConnector.SendAsync($"State of device {deviceState.Id} changed from {lastState} to {deviceState.State}");
+                    await mediator.Send(new NotifyRequest($"State of device {deviceState.Id} changed from {lastState} to {deviceState.State}"));
                 }
 
                 _lastDeviceStates[deviceState.Id] = deviceState.State;
