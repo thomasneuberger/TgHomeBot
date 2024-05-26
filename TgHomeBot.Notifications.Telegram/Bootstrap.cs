@@ -19,6 +19,7 @@ public static class Bootstrap
         services.AddSingleton<ICommand, StartCommand>();
         services.AddSingleton<ICommand, CheckCommand>();
         services.AddSingleton<ICommand, EndCommand>();
+        services.AddSingleton<ICommand, MonitoredDevicesCommand>();
         services.AddSingleton<ICommand, DevicesCommand>();
         services.AddSingleton<ICommand, HelpCommand>();
 

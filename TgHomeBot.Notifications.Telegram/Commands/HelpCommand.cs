@@ -13,6 +13,7 @@ internal class HelpCommand : ICommand
                       Der TgHomeBot überwacht Geräte im Smart Home und schickt eine Nachricht, wenn eines davon seine Arbeit beendet hat, d.h. die Leistungsaufnahme unter einen bestimmten Schwellwert fällt.
                       /start: Eine Verbindung mit TgHomeBot herstellen. Die Verbdindung wird nur für bestimmte Benutzer hergestellt.
                       /check: Prüfen, ob eine Verbindung mit TgHomeBot  hergestellt ist.
+                      /monitored: Gibt die Einstellungen für die überwachten GEräte aus.
                       /devices: Gibt die aktuelle Leistungsaufnahme der überwachten Geräte aus.
                       /end: Trennt die Verbindung zum TghomeBot. Die Verbindung kann mit /start wieder hergestellt werden.
                       /help: Gibt diese Hilfeinformationen aus.
