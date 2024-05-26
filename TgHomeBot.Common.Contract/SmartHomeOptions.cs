@@ -1,6 +1,6 @@
 ﻿using TgHomeBot.SmartHome.Contract.Models;
 
-namespace TgHomeBot.Api.Options;
+namespace TgHomeBot.Common.Contract;
 
 public class SmartHomeOptions
 {

@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Options;
-using TgHomeBot.Api.Options;
+using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Contract.Requests;
 using TgHomeBot.SmartHome.Contract;
 

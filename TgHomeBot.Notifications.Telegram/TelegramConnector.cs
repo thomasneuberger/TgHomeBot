@@ -1,63 +1,56 @@
-﻿using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Contract;
-using TgHomeBot.Notifications.Telegram.Models;
-using File = System.IO.File;
+using TgHomeBot.Notifications.Telegram.Commands;
+using TgHomeBot.Notifications.Telegram.Services;
 
 namespace TgHomeBot.Notifications.Telegram;
-internal class TelegramConnector : INotificationConnector
+internal class TelegramConnector(
+    IOptions<TelegramOptions> options,
+    IRegisteredChatService registeredChatService,
+    IEnumerable<ICommand> commands,
+    ILogger<TelegramConnector> logger)
+    : INotificationConnector
 {
-	private readonly IOptions<TelegramOptions> _options;
-	private readonly IOptions<FileStorageOptions> _fileStorageOptions;
-	private readonly ILogger<TelegramConnector> _logger;
-
-	private readonly TelegramBotClient _botClient;
-	private readonly List<RegisteredChat> _registeredChats = new List<RegisteredChat>();
-	private readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions(JsonSerializerOptions.Default)
-	{
-		WriteIndented = true
-	};
+    private readonly IDictionary<string, ICommand> _commands = commands.ToDictionary(c => c.Name, c => c);
+    private readonly TelegramBotClient _botClient = new(options.Value.Token);
 	private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-	public TelegramConnector(IOptions<TelegramOptions> options, IOptions<FileStorageOptions> fileStorageOptions, ILogger<TelegramConnector> logger)
+    public async Task Connect()
 	{
-		_jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-		_options = options;
-		_fileStorageOptions = fileStorageOptions;
-		_logger = logger;
-		_botClient = new TelegramBotClient(_options.Value.Token);
-	}
+		await registeredChatService.LoadRegisteredChats();
 
-	public async Task Connect()
-	{
-		await LoadRegisteredChats();
+        var botCommands = commands
+            .Select(c => new BotCommand { Command = c.Name, Description = c.Description })
+            .ToList();
+
+        foreach (var chat in registeredChatService.RegisteredChats)
+        {
+            await _botClient.SetMyCommandsAsync(botCommands, BotCommandScope.Chat(new ChatId(chat.ChatId)), cancellationToken: _cancellationTokenSource.Token);
+        }
 
 		_botClient.StartReceiving(ReceiveUpdate, HandleError, cancellationToken: _cancellationTokenSource.Token);
 
 		var bot = await _botClient.GetMeAsync();
 
-		_logger.LogInformation("Telegram bot connected: {Bot}", bot);
+		logger.LogInformation("Telegram bot connected: {Bot}", bot);
 	}
 
 	public async Task DisconnectAsync()
 	{
 		await _cancellationTokenSource.CancelAsync();
 
-		_registeredChats.Clear();
+		registeredChatService.Clear();
 
-		_logger.LogInformation("Telegram bot disconnected.");
+		logger.LogInformation("Telegram bot disconnected.");
 	}
 
 	private void HandleError(ITelegramBotClient client, Exception exception, CancellationToken cancellationToken)
 	{
-		_logger.LogError(exception, "Exception from Telegram Bot: {Exception}", exception);
+		logger.LogError(exception, "Exception from Telegram Bot: {Exception}", exception);
 	}
 
 	private void ReceiveUpdate(ITelegramBotClient client, Update update, CancellationToken cancellationToken)
@@ -67,101 +60,33 @@ internal class TelegramConnector : INotificationConnector
 
 	private async Task ReceiveUpdateAsync(ITelegramBotClient client, Update update, CancellationToken cancellationToken)
 	{
-		_logger.LogInformation("Update received from Telegram: {Update}", update.Type);
+		logger.LogInformation("Update received from Telegram: {Update}", update.Type);
 
-		if (update is not { Message.From.Username: not null })
+		if (update is not { Message: { From.Username: not null, Text: not null } })
 		{
 			return;
 		}
 
-		switch (update.Message.Text)
-		{
-			case "/start":
-				if (_options.Value.AllowedUserNames.Contains(update.Message.From.Username))
-				{
-					var userId = update.Message.From.Id;
-					var username = update.Message.From.Username;
-					var chatId = update.Message.Chat.Id;
-					if (await RegisterChat(userId, username, chatId))
-					{
-						await client.SendTextMessageAsync(chatId, "Welcome to TgHomeBot. You can leave with /end.", cancellationToken: cancellationToken);
-					}
-				}
-				break;
-			case "/end":
-				if (update.Message is not null)
-				{
-					if (await UnregisterChatAsync(update.Message.Chat.Id))
-					{
-						await client.SendTextMessageAsync(update.Message.Chat.Id, "Bye from TgHomeBot", cancellationToken: cancellationToken);
-					}
-				}
-				break;
-			default:
-				_logger.LogDebug("Received unknown message: {Message}", update.Message.Text);
-				break;
-		}
-	}
-
-	private async Task<bool> RegisterChat(long userId, string username, long chatId)
-	{
-		var existingChat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
-		if (existingChat is not null)
-		{
-			return false;
-		}
-
-		_registeredChats.Add(new RegisteredChat
-		{
-			Id = userId,
-			Username = username,
-			ChatId = chatId
-		});
-
-		await SaveRegisteredChats();
-		_logger.LogInformation("Registered chat {ChatId} with user {User}", chatId, username);
-
-		return true;
-	}
-
-	private async Task<bool> UnregisterChatAsync(long chatId)
-	{
-		var existingChat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
-		if (existingChat is null)
-		{
-			return false;
-		}
-
-		_registeredChats.Remove(existingChat);
-		await SaveRegisteredChats();
-		return true;
-
-	}
+        if (_commands.TryGetValue(update.Message.Text, out var command))
+        {
+            if (command.AllowUnregistered || registeredChatService.RegisteredChats.Any(c => c.ChatId == update.Message.Chat.Id))
+            {
+                await command.ProcessMessage(update.Message, client, cancellationToken);
+            }
+        }
+        else
+        {
+            logger.LogDebug("Received unknown message: {Message}", update.Message.Text);
+        }
+    }
 
 	public async Task SendAsync(string message)
 	{
-		foreach (var registeredChat in _registeredChats)
+		foreach (var registeredChat in registeredChatService.RegisteredChats)
 		{
 			await _botClient.SendTextMessageAsync(registeredChat.ChatId, message, parseMode: ParseMode.Html);
 
-			_logger.LogInformation("Message sent to chat {ChatId} with user {User}: {Message}", registeredChat.ChatId, registeredChat.Username, message);
-		}
-	}
-
-	private async Task SaveRegisteredChats()
-	{
-		var json = JsonSerializer.Serialize(_registeredChats, _jsonSerializerOptions);
-		await File.WriteAllTextAsync(Path.Combine(_fileStorageOptions.Value.Path, "RegisteredChats.json"), json, Encoding.UTF8);
-	}
-
-	private async Task LoadRegisteredChats()
-	{
-		var filename = Path.Combine(_fileStorageOptions.Value.Path, "RegisteredChats.json");
-		if (File.Exists(filename))
-		{
-			var json = await File.ReadAllTextAsync(filename, Encoding.UTF8);
-			var registeredChats = JsonSerializer.Deserialize<RegisteredChat[]>(json)!;
-			_registeredChats.AddRange(registeredChats);
+			logger.LogInformation("Message sent to chat {ChatId} with user {User}: {Message}", registeredChat.ChatId, registeredChat.Username, message);
 		}
 	}
 }

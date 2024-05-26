@@ -3,7 +3,6 @@ using Serilog;
 using Serilog.Templates;
 using Serilog.Templates.Themes;
 using TgHomeBot.Api;
-using TgHomeBot.Api.Options;
 using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Telegram;
 using TgHomeBot.SmartHome.HomeAssistant;

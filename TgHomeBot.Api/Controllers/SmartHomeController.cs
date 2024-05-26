@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using TgHomeBot.Api.Options;
+using TgHomeBot.Common.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
 using TgHomeBot.SmartHome.Contract.Requests;
 

@@ -16,7 +16,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
     {
         var response = await CallApi("states", HttpMethod.Get);
         var devices = JsonSerializer.Deserialize<HomeAssistantDevice[]>(response)!;
-        return devices.Select(ConvertDevice).ToArray();
+        return devices.Select(d => ConvertDevice(d)).ToArray();
     }
 
     public async Task<IReadOnlyList<SmartDevice>> GetDevices(IReadOnlyList<MonitoredDevice> requestedDevices)
@@ -26,7 +26,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         {
             var response = await CallApi($"states/{requestedDevice.Id}", HttpMethod.Get);
             var device = JsonSerializer.Deserialize<HomeAssistantDevice>(response)!;
-            devices.Add(ConvertDevice(device));
+            devices.Add(ConvertDevice(device, requestedDevice.Name));
         }
 
         return devices;
@@ -51,12 +51,12 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         return await response.Content.ReadAsStringAsync();
     }
 
-    private static SmartDevice ConvertDevice(HomeAssistantDevice d)
+    private static SmartDevice ConvertDevice(HomeAssistantDevice d, string? name = null)
     {
         return new SmartDevice
         {
             Id = d.EntityId,
-            Name = d.Attributes.FriendlyName,
+            Name = name ?? d.Attributes.FriendlyName,
             State = string.IsNullOrWhiteSpace(d.Attributes.UnitOfMeasurement) ? d.State : $"{d.State} {d.Attributes.UnitOfMeasurement}"
         };
     }
