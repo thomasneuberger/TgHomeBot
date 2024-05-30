@@ -18,6 +18,8 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
     private readonly ClientWebSocket _webSocket = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+    private bool _reconnect = false;
+
     public MonitorState State => _webSocket.State switch
     {
         WebSocketState.Open => MonitorState.Listening,
@@ -32,6 +34,8 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
 
         await _webSocket.ConnectAsync(new Uri(uri), cancellationToken);
 
+        _reconnect = true;
+
         _ = Task.Run(WaitForMessages, _cancellationTokenSource.Token);
     }
 
@@ -40,14 +44,26 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
         var message = string.Empty;
         while (_webSocket.State == WebSocketState.Open)
         {
-            var buffer = new byte[1024];
-            var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _cancellationTokenSource.Token);
-            message += Encoding.UTF8.GetString(buffer, 0, result.Count);
-            if (result.EndOfMessage)
+            try
             {
-                await ProcessMessage(message);
-                message = string.Empty;
+                var buffer = new byte[1024];
+                var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _cancellationTokenSource.Token);
+                message += Encoding.UTF8.GetString(buffer, 0, result.Count);
+                if (result.EndOfMessage)
+                {
+                    await ProcessMessage(message);
+                    message = string.Empty;
+                }
             }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error receiving message from Home Assistant web socket: {Exception}", ex.Message);
+            }
+        }
+        logger.LogWarning("Home Assistant Web socket has been closed.");
+        if (_reconnect)
+        {
+            logger.LogInformation("Reconnect...");
         }
     }
 
@@ -190,6 +206,7 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
 
     public async Task StopMonitoring(CancellationToken cancellationToken)
     {
+        _reconnect = false;
         await _cancellationTokenSource.CancelAsync();
         await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed", cancellationToken);
     }
