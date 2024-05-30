@@ -28,6 +28,11 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
 
     public async Task StartMonitoringAsync(CancellationToken cancellationToken)
     {
+        if (_webSocket.State == WebSocketState.Open)
+        {
+            return;
+        }
+
         var baseurl = options.Value.BaseUrl.TrimEnd('/');
         baseurl = "ws" + baseurl[baseurl.IndexOf(':')..];
         var uri = $"{baseurl}/api/websocket";
@@ -64,6 +69,7 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
         if (_reconnect)
         {
             logger.LogInformation("Reconnect...");
+            await StartMonitoringAsync(_cancellationTokenSource.Token);
         }
     }
 
