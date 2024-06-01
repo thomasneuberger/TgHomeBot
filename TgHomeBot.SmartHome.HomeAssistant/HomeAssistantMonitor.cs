@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using TgHomeBot.Notifications.Contract.Requests;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
@@ -12,13 +13,17 @@ using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
-public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptions<HomeAssistantOptions> options, IMediator mediator, ILogger<HomeAssistantMonitor> logger)
+public class HomeAssistantMonitor(
+    IReadOnlyList<MonitoredDevice> devices,
+    IOptions<HomeAssistantOptions> options,
+    IServiceProvider serviceProvider,
+    ILogger<HomeAssistantMonitor> logger)
     : ISmartHomeMonitor
 {
     private readonly ClientWebSocket _webSocket = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    private bool _reconnect = false;
+    private bool _reconnect;
 
     public MonitorState State => _webSocket.State switch
     {
@@ -118,7 +123,7 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
                     }
                     break;
                 case "event":
-                    ProcessEvent(message);
+                    await ProcessEvent(message);
                     break;
                 default:
                     logger.LogError("Unknown message of type {Type}: {Message}", genericMessage.Type, message);
@@ -131,7 +136,7 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
         }
     }
 
-    private void ProcessEvent(string message)
+    private async Task ProcessEvent(string message)
     {
         var eventMessage = JsonSerializer.Deserialize<EventMessage<object>>(message)!;
 
@@ -156,7 +161,9 @@ public class HomeAssistantMonitor(IReadOnlyList<MonitoredDevice> devices, IOptio
 
                         if (oldState == DeviceState.Running && (newState != DeviceState.Running))
                         {
-                            mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist fertig."));
+                            using var scope = serviceProvider.CreateScope();
+                            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                            await mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist fertig."));
                         }
                     }
                     else

@@ -1,5 +1,4 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -9,7 +8,7 @@ using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
-internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, IMediator mediator, ILogger<HomeAssistantMonitor> monitorLogger)
+internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, IServiceProvider serviceProvider, ILogger<HomeAssistantMonitor> monitorLogger)
     : ISmartHomeConnector
 {
     public async Task<IReadOnlyList<SmartDevice>> GetDevices()
@@ -34,7 +33,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
 
     public ISmartHomeMonitor CreateMonitorAsync(IReadOnlyList<MonitoredDevice> devices, CancellationToken cancellationToken)
     {
-        var monitor = new HomeAssistantMonitor(devices, options, mediator, monitorLogger);
+        var monitor = new HomeAssistantMonitor(devices, options, serviceProvider, monitorLogger);
         return monitor;
     }
 
