@@ -14,7 +14,7 @@ public static class Bootstrap
     {
         services.AddOptions<HomeAssistantOptions>().Configure(options => configuration.GetSection("HomeAssistant").Bind(options));
 
-        services.AddScoped<ISmartHomeConnector, HomeAssistantConnector>();
+        services.AddSingleton<ISmartHomeConnector, HomeAssistantConnector>();
 
         services.AddTransient<IRequestHandler<GetDevicesRequest, IReadOnlyList<SmartDevice>>, GetDevicesRequestHandler>();
 

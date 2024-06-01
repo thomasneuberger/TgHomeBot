@@ -13,11 +13,10 @@ public class MonitoringService(IServiceProvider services, IOptions<SmartHomeOpti
     {
         return _smartHomeMonitor?.State ?? MonitorState.Unknown;
     }
-    
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        using var scope = services.CreateScope();
-        var smartHomeConnector = scope.ServiceProvider.GetRequiredService<ISmartHomeConnector>();
+        var smartHomeConnector = services.GetRequiredService<ISmartHomeConnector>();
         _smartHomeMonitor = smartHomeConnector.CreateMonitorAsync(options.Value.MonitoredDevices, cancellationToken);
 
         await _smartHomeMonitor.StartMonitoringAsync(cancellationToken);
