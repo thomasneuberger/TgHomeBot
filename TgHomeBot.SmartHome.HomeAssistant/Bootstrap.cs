@@ -17,6 +17,7 @@ public static class Bootstrap
         services.AddSingleton<ISmartHomeConnector, HomeAssistantConnector>();
 
         services.AddTransient<IRequestHandler<GetDevicesRequest, IReadOnlyList<SmartDevice>>, GetDevicesRequestHandler>();
+        services.AddTransient<IRequestHandler<GetMonitorStateRequest, string>, GetMonitorStateRequestHandler>();
 
         return services;
     }

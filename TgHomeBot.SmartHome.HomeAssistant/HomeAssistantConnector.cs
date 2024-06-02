@@ -11,6 +11,9 @@ namespace TgHomeBot.SmartHome.HomeAssistant;
 internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, IServiceProvider serviceProvider, ILogger<HomeAssistantMonitor> monitorLogger)
     : ISmartHomeConnector
 {
+    private ISmartHomeMonitor? _smartHomeMonitor;
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+
     public async Task<IReadOnlyList<SmartDevice>> GetDevices()
     {
         var response = await CallApi("states", HttpMethod.Get);
@@ -31,10 +34,23 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         return devices;
     }
 
-    public ISmartHomeMonitor CreateMonitorAsync(IReadOnlyList<MonitoredDevice> devices, CancellationToken cancellationToken)
+    public async Task<ISmartHomeMonitor> CreateMonitorAsync(IReadOnlyList<MonitoredDevice> devices,
+        CancellationToken cancellationToken)
     {
-        var monitor = new HomeAssistantMonitor(devices, options, serviceProvider, monitorLogger);
-        return monitor;
+        try
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+            if (_smartHomeMonitor is null)
+            {
+                _smartHomeMonitor = new HomeAssistantMonitor(devices, options, serviceProvider, monitorLogger);
+            }
+
+            return _smartHomeMonitor;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     private async Task<string> CallApi(string endpoint, HttpMethod method)

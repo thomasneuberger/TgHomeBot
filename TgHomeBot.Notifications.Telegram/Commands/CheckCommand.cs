@@ -1,10 +1,12 @@
-﻿using Telegram.Bot;
+﻿using MediatR;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgHomeBot.Notifications.Telegram.Services;
+using TgHomeBot.SmartHome.Contract.Requests;
 
 namespace TgHomeBot.Notifications.Telegram.Commands;
 
-internal class CheckCommand(IRegisteredChatService registeredChatService) : ICommand
+internal class CheckCommand(IRegisteredChatService registeredChatService, IMediator mediator) : ICommand
 {
     public bool AllowUnregistered => true;
 
@@ -18,7 +20,12 @@ internal class CheckCommand(IRegisteredChatService registeredChatService) : ICom
 
         if (isRegistered)
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), "Es besteht eine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
+            var state = await mediator.Send(new GetMonitorStateRequest(), cancellationToken);
+            var replyMessage = $"""
+                          Es besteht eine Verbindung zum TgHomeBot.
+                          Der Status des Smart Home Monitorings ist {state}.
+                          """;
+            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), replyMessage, cancellationToken: cancellationToken);
         }
         else
         {
