@@ -73,8 +73,15 @@ public class HomeAssistantMonitor(
         logger.LogWarning("Home Assistant Web socket has been closed.");
         if (_reconnect)
         {
-            logger.LogInformation("Reconnect...");
-            await StartMonitoringAsync(_cancellationTokenSource.Token);
+            while (_webSocket.State == WebSocketState.Closed)
+            {
+                logger.LogInformation("Reconnect...");
+                await StartMonitoringAsync(_cancellationTokenSource.Token);
+                if (_webSocket.State != WebSocketState.Open)
+                {
+                    await Task.Delay(5000);
+                }
+            }
         }
     }
 
