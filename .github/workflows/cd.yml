@@ -29,7 +29,7 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        
+
     - name: Create image tag
       id: imageTag
       run: |
@@ -55,3 +55,6 @@ jobs:
         push: true
         tags: ${{ steps.metaApi.outputs.tags }}
         labels: ${{ steps.metaApi.outputs.labels }}
+
+    - name: Output image tag
+      run: echo "::notice Image tag ${{ steps.imageTag.outputs.tag }} published"
