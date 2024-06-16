@@ -10,6 +10,7 @@ internal class LogFileCommand(IRegisteredChatService registeredChatService, ILog
 {
     public string Name => "/logfile";
     public string Description => "Eine bestimmte Logdatei herunterladen";
+    public bool HideFromMenu => true;
     public async Task ProcessMessage(Message message, ITelegramBotClient client, CancellationToken cancellationToken)
     {
         var isRegistered = registeredChatService.RegisteredChats.Any(c => c.ChatId == message.Chat.Id);
