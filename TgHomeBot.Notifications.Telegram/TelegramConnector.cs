@@ -24,6 +24,7 @@ internal class TelegramConnector(
 		await registeredChatService.LoadRegisteredChats();
 
         var botCommands = commands
+	        .Where(c => !c.HideFromMenu)
             .Select(c => new BotCommand { Command = c.Name, Description = c.Description })
             .ToList();
 
@@ -60,14 +61,15 @@ internal class TelegramConnector(
 
 	private async Task ReceiveUpdateAsync(ITelegramBotClient client, Update update, CancellationToken cancellationToken)
 	{
-		logger.LogInformation("Update received from Telegram: {Update}", update.Type);
+		logger.LogInformation("Update received from Telegram: {Update}", update.Message?.Text ?? "No message");
 
 		if (update is not { Message: { From.Username: not null, Text: not null } })
 		{
 			return;
 		}
 
-        if (_commands.TryGetValue(update.Message.Text, out var command))
+		var commandText = update.Message.Text.Split('_', StringSplitOptions.RemoveEmptyEntries)[0];
+        if (_commands.TryGetValue(commandText, out var command))
         {
             if (command.AllowUnregistered || registeredChatService.RegisteredChats.Any(c => c.ChatId == update.Message.Chat.Id))
             {

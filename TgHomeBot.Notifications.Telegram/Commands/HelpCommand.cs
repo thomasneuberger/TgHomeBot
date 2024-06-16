@@ -15,6 +15,7 @@ internal class HelpCommand : ICommand
                       /check: Prüfen, ob eine Verbindung mit TgHomeBot  hergestellt ist.
                       /monitored: Gibt die Einstellungen für die überwachten GEräte aus.
                       /devices: Gibt die aktuelle Leistungsaufnahme der überwachten Geräte aus.
+                      /logs: Gibt eine Liste der Logdateien zurück und erlaubt es, eine Logdatei herunterzuladen.
                       /end: Trennt die Verbindung zum TghomeBot. Die Verbindung kann mit /start wieder hergestellt werden.
                       /help: Gibt diese Hilfeinformationen aus.
                       """;

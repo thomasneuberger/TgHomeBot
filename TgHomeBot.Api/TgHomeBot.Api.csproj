@@ -30,8 +30,4 @@
       <ProjectReference Include="..\TgHomeBot.SmartHome.HomeAssistant\TgHomeBot.SmartHome.HomeAssistant.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Options\" />
-    </ItemGroup>
-
 </Project>

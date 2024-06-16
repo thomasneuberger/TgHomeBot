@@ -27,12 +27,15 @@ builder.Services.AddSerilog((services, options) =>
 });
 
 builder.Services.AddOptions<FileStorageOptions>().Configure(options => builder.Configuration.GetSection("FileStorage").Bind(options));
+builder.Services.AddOptions<SerilogLogFileProvider.SerilogOptions>().Configure(options => builder.Configuration.GetSection("Serilog").Bind(options));
 
 builder.Services.AddHomeAssistant(builder.Configuration);
 
 builder.Services.AddOptions<SmartHomeOptions>().Configure(options => builder.Configuration.GetSection("SmartHome").Bind(options));
 builder.Services.AddSingleton<IHostedService, MonitoringService>();
 //builder.Services.AddSingleton<IHostedService, PollingService>();
+
+builder.Services.AddSingleton<ILogFileProvider, SerilogLogFileProvider>();
 
 builder.Services.AddTelegram(builder.Configuration);
 

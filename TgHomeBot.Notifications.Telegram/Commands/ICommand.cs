@@ -6,6 +6,7 @@ namespace TgHomeBot.Notifications.Telegram.Commands;
 internal interface ICommand
 {
     bool AllowUnregistered => false;
+    bool HideFromMenu => false;
     string Name { get; }
     string Description { get; }
     Task ProcessMessage(Message message, ITelegramBotClient client, CancellationToken cancellationToken);
