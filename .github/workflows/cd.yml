@@ -57,4 +57,4 @@ jobs:
         labels: ${{ steps.metaApi.outputs.labels }}
 
     - name: Output image tag
-      run: echo "::notice Image tag ${{ steps.imageTag.outputs.tag }} published"
+      run: echo "Image tag ${{ steps.imageTag.outputs.tag }} published" >> $GITHUB_STEP_SUMMARY
