@@ -12,4 +12,4 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Build the docker image
-      run: docker build . --file .\TgHomeBot.Api\Dockerfile --tag tghomebot:latest
+      run: docker build . --file ./TgHomeBot.Api/Dockerfile --tag tghomebot:latest
