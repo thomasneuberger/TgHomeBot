@@ -6,6 +6,7 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ["Directory.Packages.props", "."]
 COPY ["TgHomeBot.Api/TgHomeBot.Api.csproj", "TgHomeBot.Api/"]
 COPY ["TgHomeBot.SmartHome.Contract/TgHomeBot.SmartHome.Contract.csproj", "TgHomeBot.SmartHome.Contract/"]
 COPY ["TgHomeBot.SmartHome.HomeAssistant/TgHomeBot.SmartHome.HomeAssistant.csproj", "TgHomeBot.SmartHome.HomeAssistant/"]
