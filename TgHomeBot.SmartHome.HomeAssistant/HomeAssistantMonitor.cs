@@ -20,29 +20,53 @@ public class HomeAssistantMonitor(
     ILogger<HomeAssistantMonitor> logger)
     : ISmartHomeMonitor
 {
-    private readonly ClientWebSocket _webSocket = new();
+    private ClientWebSocket? _webSocket;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
     private bool _reconnect;
 
-    public MonitorState State => _webSocket.State switch
+    public MonitorState State => _webSocket?.State switch
     {
+        null => MonitorState.Unknown,
         WebSocketState.Open => MonitorState.Listening,
         _ => MonitorState.Idle
     };
 
     public async Task StartMonitoringAsync(CancellationToken cancellationToken)
     {
-        if (_webSocket.State == WebSocketState.Open)
+        if (_webSocket?.State == WebSocketState.Open)
         {
             return;
         }
 
         var baseurl = options.Value.BaseUrl.TrimEnd('/');
         baseurl = "ws" + baseurl[baseurl.IndexOf(':')..];
-        var uri = $"{baseurl}/api/websocket";
+        var uri = new Uri($"{baseurl}/api/websocket");
 
-        await _webSocket.ConnectAsync(new Uri(uri), cancellationToken);
+        while (true)
+        {
+            try
+            {
+                _webSocket ??= new ClientWebSocket();
+                await _webSocket.ConnectAsync(uri, cancellationToken);
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("Error connecting to Home Assistant: [{Type}] {Exception}", ex.GetType().FullName, ex.Message);
+                var inner = ex.InnerException;
+                while (inner is not null)
+                {
+                    logger.LogError("Inner exception: [{Type}] {Exception}", inner.GetType().FullName, inner.Message);
+                    inner = inner.InnerException;
+                }
+
+                _webSocket?.Dispose();
+                _webSocket = null;
+
+                await Task.Delay(2000, cancellationToken);
+            }
+        }
 
         _reconnect = true;
 
@@ -52,7 +76,7 @@ public class HomeAssistantMonitor(
     private async Task WaitForMessages()
     {
         var message = string.Empty;
-        while (_webSocket.State == WebSocketState.Open)
+        while (_webSocket?.State == WebSocketState.Open)
         {
             try
             {
@@ -73,11 +97,11 @@ public class HomeAssistantMonitor(
         logger.LogWarning("Home Assistant Web socket has been closed.");
         if (_reconnect)
         {
-            while (_webSocket.State == WebSocketState.Closed)
+            while (_webSocket is null || _webSocket.State == WebSocketState.Closed)
             {
                 logger.LogInformation("Reconnect...");
                 await StartMonitoringAsync(_cancellationTokenSource.Token);
-                if (_webSocket.State != WebSocketState.Open)
+                if (_webSocket?.State != WebSocketState.Open)
                 {
                     await Task.Delay(5000);
                 }
@@ -219,6 +243,12 @@ public class HomeAssistantMonitor(
     private async Task SendMessageAsync<TMessage>(TMessage message)
         where TMessage: IMessage
     {
+        if (_webSocket is null)
+        {
+            logger.LogError("Could not send message, no websocket found.");
+            return;
+        }
+
         var serialized = JsonSerializer.Serialize(message);
         var data = Encoding.UTF8.GetBytes(serialized);
         await _webSocket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, WebSocketMessageFlags.EndOfMessage, _cancellationTokenSource.Token);
@@ -228,13 +258,16 @@ public class HomeAssistantMonitor(
     {
         _reconnect = false;
         await _cancellationTokenSource.CancelAsync();
-        await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed", cancellationToken);
+        if (_webSocket is not null)
+        {
+            await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed", cancellationToken);
+        }
     }
 
     public void Dispose()
     {
         _cancellationTokenSource.Cancel();
-        _webSocket.Dispose();
+        _webSocket?.Dispose();
         _cancellationTokenSource.Dispose();
     }
 }
