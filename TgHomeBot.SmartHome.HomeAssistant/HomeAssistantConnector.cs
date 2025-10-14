@@ -26,9 +26,16 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         var devices = new List<SmartDevice>();
         foreach (var requestedDevice in requestedDevices)
         {
-            var response = await CallApi($"states/{requestedDevice.Id}", HttpMethod.Get);
-            var device = JsonSerializer.Deserialize<HomeAssistantDevice>(response)!;
-            devices.Add(ConvertDevice(device, requestedDevice.Name));
+            try
+            {
+                var response = await CallApi($"states/{requestedDevice.Id}", HttpMethod.Get);
+                var device = JsonSerializer.Deserialize<HomeAssistantDevice>(response)!;
+                devices.Add(ConvertDevice(device, requestedDevice.Name));
+            }
+            catch (Exception ex)
+            {
+                monitorLogger.LogError(ex, "Error retrieving status of device {Device} ({DeviceId})", requestedDevice.Name, requestedDevice.Id);
+            }
         }
 
         return devices;

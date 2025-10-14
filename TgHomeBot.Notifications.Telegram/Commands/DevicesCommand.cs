@@ -19,7 +19,9 @@ internal class DevicesCommand(IOptions<SmartHomeOptions> options, IServiceProvid
 
         var devices = await mediator.Send(new GetDevicesRequest(options.Value.MonitoredDevices), cancellationToken);
 
-        var deviceStates = string.Join('\n', devices.Select(d => $"{d.Name}: {d.State}"));
+        var deviceStates = devices.Count > 0
+            ? string.Join('\n', devices.Select(d => $"{d.Name}: {d.State}"))
+            : "No monitored devices found.";
 
         await client.SendTextMessageAsync(new ChatId(message.Chat.Id), deviceStates, cancellationToken: cancellationToken);
     }
