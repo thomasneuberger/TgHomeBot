@@ -19,6 +19,8 @@ internal class TelegramConnector(
     private readonly TelegramBotClient _botClient = new(options.Value.Token);
 	private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+    private string? _botName;
+
     public async Task Connect()
 	{
 		await registeredChatService.LoadRegisteredChats();
@@ -36,6 +38,8 @@ internal class TelegramConnector(
 		_botClient.StartReceiving(ReceiveUpdate, HandleError, cancellationToken: _cancellationTokenSource.Token);
 
 		var bot = await _botClient.GetMeAsync();
+
+        _botName = bot.Username;
 
 		logger.LogInformation("Telegram bot connected: {Bot}", bot);
 	}
@@ -69,6 +73,16 @@ internal class TelegramConnector(
 		}
 
 		var commandText = update.Message.Text.Split('_', StringSplitOptions.RemoveEmptyEntries)[0];
+
+        if (commandText.Contains("@") && !string.IsNullOrWhiteSpace(_botName))
+        {
+            var parts = commandText.Split('@');
+            if (parts.Contains(_botName))
+            {
+                commandText = parts[0];
+            }
+        }
+
         if (_commands.TryGetValue(commandText, out var command))
         {
             if (command.AllowUnregistered || registeredChatService.RegisteredChats.Any(c => c.ChatId == update.Message.Chat.Id))
