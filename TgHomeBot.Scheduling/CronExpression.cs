@@ -4,9 +4,12 @@ namespace TgHomeBot.Scheduling;
 /// Simple cron expression evaluator for basic scheduling patterns
 /// Supports simplified cron expressions: "0 * * * *" for hourly, "0 0 * * *" for daily, etc.
 /// Format: minute hour day month dayofweek
+/// Note: dayofweek uses 0=Sunday convention (same as .NET DayOfWeek enum)
 /// </summary>
 public class CronExpression
 {
+    private const int MaxMinutesToCheck = 60 * 24 * 31; // Check up to a month ahead
+    
     private readonly string _expression;
     private readonly int? _minute;
     private readonly int? _hour;
@@ -63,6 +66,8 @@ public class CronExpression
         if (_month.HasValue && time.Month != _month.Value)
             return false;
 
+        // Day of week: uses .NET DayOfWeek enum convention (0=Sunday, 1=Monday, ..., 6=Saturday)
+        // This matches the behavior of many cron implementations
         if (_dayOfWeek.HasValue && (int)time.DayOfWeek != _dayOfWeek.Value)
             return false;
 
@@ -77,9 +82,9 @@ public class CronExpression
         var next = after.AddMinutes(1);
         next = new DateTime(next.Year, next.Month, next.Day, next.Hour, next.Minute, 0, next.Kind);
 
-        // Simple approach: check each minute until we find a match
-        // This is not optimal but works for basic schedules
-        for (int i = 0; i < 60 * 24 * 31; i++) // Check up to a month ahead
+        // Search for the next matching time
+        // Note: This is a simple implementation; for production use, consider a dedicated cron library
+        for (int i = 0; i < MaxMinutesToCheck; i++)
         {
             if (Matches(next))
             {

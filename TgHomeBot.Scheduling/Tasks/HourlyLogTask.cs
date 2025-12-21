@@ -19,7 +19,7 @@ public class HourlyLogTask : IScheduledTask
 
     public Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var currentTime = DateTime.Now;
+        var currentTime = DateTime.UtcNow;
         _logger.LogInformation("HourlyLogTask executed at: {DateTime}", currentTime.ToString("yyyy-MM-dd HH:mm:ss"));
         return Task.CompletedTask;
     }
