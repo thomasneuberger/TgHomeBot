@@ -133,12 +133,14 @@ public class SchedulerService : IHostedService, IDisposable
 
     private IScheduledTask? CreateTask(string taskType)
     {
-        // Get the task type from the current assembly
-        var type = Type.GetType($"TgHomeBot.Scheduling.Tasks.{taskType}, TgHomeBot.Scheduling");
+        // Try to find the task type in the current assembly
+        var assembly = typeof(SchedulerService).Assembly;
+        var fullTypeName = $"TgHomeBot.Scheduling.Tasks.{taskType}";
+        var type = assembly.GetType(fullTypeName);
         
         if (type == null)
         {
-            _logger.LogError("Task type not found: {TaskType}", taskType);
+            _logger.LogError("Task type not found: {TaskType} (looking for {FullTypeName})", taskType, fullTypeName);
             return null;
         }
 
@@ -209,7 +211,7 @@ public class SchedulerService : IHostedService, IDisposable
                 try
                 {
                     // Calculate time until next execution
-                    var now = DateTime.Now;
+                    var now = DateTime.UtcNow;
                     var delay = _cronExpression.GetTimeUntilNext(now);
 
                     _logger.LogDebug("Task {TaskName} will run in {Delay}", _task.TaskName, delay);

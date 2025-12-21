@@ -8,7 +8,10 @@ namespace TgHomeBot.Scheduling;
 /// </summary>
 public class CronExpression
 {
-    private const int MaxMinutesToCheck = 60 * 24 * 31; // Check up to a month ahead
+    private const int MinutesPerHour = 60;
+    private const int HoursPerDay = 24;
+    private const int DaysToCheckAhead = 31;
+    private const int MaxMinutesToCheck = MinutesPerHour * HoursPerDay * DaysToCheckAhead; // Check up to a month ahead
     
     private readonly string _expression;
     private readonly int? _minute;
