@@ -42,7 +42,7 @@ builder.Services.AddTelegram(builder.Configuration);
 
 builder.Services.AddSingleton<IHostedService, NotificationService>();
 
-builder.Services.AddScheduling(builder.Configuration);
+builder.Services.AddScheduling();
 
 builder.Services.AddHttpClient();
 

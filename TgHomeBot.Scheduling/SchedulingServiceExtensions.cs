@@ -13,13 +13,9 @@ public static class SchedulingServiceExtensions
     /// Adds the scheduling service to the service collection
     /// </summary>
     /// <param name="services">The service collection</param>
-    /// <param name="configuration">The configuration</param>
     /// <returns>The service collection for chaining</returns>
-    public static IServiceCollection AddScheduling(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddScheduling(this IServiceCollection services)
     {
-        services.AddOptions<SchedulingOptions>()
-            .Configure(options => configuration.GetSection("Scheduling").Bind(options));
-
         services.AddSingleton<IHostedService, SchedulerService>();
 
         return services;

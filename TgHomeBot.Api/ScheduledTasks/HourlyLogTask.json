@@ -1,5 +1,0 @@
-{
-  "taskType": "HourlyLogTask",
-  "cronExpression": "0 * * * *",
-  "enabled": true
-}

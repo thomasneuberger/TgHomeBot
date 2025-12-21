@@ -1,8 +1,11 @@
+using AsyncAwaitBestPractices;
+using Cronos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+using TgHomeBot.Common.Contract;
 
 namespace TgHomeBot.Scheduling;
 
@@ -13,14 +16,14 @@ public class SchedulerService : IHostedService, IDisposable
 {
     private readonly ILogger<SchedulerService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly SchedulingOptions _options;
+    private readonly FileStorageOptions _options;
     private readonly List<ScheduledTaskRunner> _taskRunners = new();
     private readonly CancellationTokenSource _stoppingCts = new();
 
     public SchedulerService(
         ILogger<SchedulerService> logger,
         IServiceProvider serviceProvider,
-        IOptions<SchedulingOptions> options)
+        IOptions<FileStorageOptions> options)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -53,7 +56,7 @@ public class SchedulerService : IHostedService, IDisposable
                     {
                         var runner = new ScheduledTaskRunner(task, config, _logger);
                         _taskRunners.Add(runner);
-                        _ = runner.StartAsync(_stoppingCts.Token); // Fire and forget
+                        runner.StartAsync(_stoppingCts.Token).SafeFireAndForget();
                         _logger.LogInformation("Started task runner for {TaskName} with schedule {CronExpression}", 
                             task.TaskName, config.CronExpression);
                     }
@@ -91,20 +94,22 @@ public class SchedulerService : IHostedService, IDisposable
     {
         var configurations = new List<TaskConfiguration>();
 
-        if (string.IsNullOrEmpty(_options.ConfigurationPath))
+        if (string.IsNullOrEmpty(_options.Path))
         {
-            _logger.LogWarning("Configuration path is not set, no tasks will be scheduled");
+            _logger.LogWarning("FileStorage path is not set, no tasks will be scheduled");
             return configurations;
         }
 
-        if (!Directory.Exists(_options.ConfigurationPath))
+        var scheduledTasksPath = Path.Combine(_options.Path, "ScheduledTasks");
+        
+        if (!Directory.Exists(scheduledTasksPath))
         {
-            _logger.LogWarning("Configuration directory does not exist: {Path}", _options.ConfigurationPath);
+            _logger.LogWarning("ScheduledTasks directory does not exist: {Path}", scheduledTasksPath);
             return configurations;
         }
 
-        var configFiles = Directory.GetFiles(_options.ConfigurationPath, "*.json");
-        _logger.LogInformation("Found {Count} configuration file(s) in {Path}", configFiles.Length, _options.ConfigurationPath);
+        var configFiles = Directory.GetFiles(scheduledTasksPath, "*.json");
+        _logger.LogInformation("Found {Count} configuration file(s) in {Path}", configFiles.Length, scheduledTasksPath);
 
         foreach (var file in configFiles)
         {
@@ -185,7 +190,7 @@ public class SchedulerService : IHostedService, IDisposable
             _task = task ?? throw new ArgumentNullException(nameof(task));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _cronExpression = new CronExpression(configuration.CronExpression);
+            _cronExpression = CronExpression.Parse(configuration.CronExpression, CronFormat.Standard);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -212,7 +217,14 @@ public class SchedulerService : IHostedService, IDisposable
                 {
                     // Calculate time until next execution
                     var now = DateTime.UtcNow;
-                    var delay = _cronExpression.GetTimeUntilNext(now);
+                    var nextOccurrence = _cronExpression.GetNextOccurrence(now, TimeZoneInfo.Utc);
+                    if (nextOccurrence == null)
+                    {
+                        _logger.LogWarning("Could not calculate next occurrence for task {TaskName}", _task.TaskName);
+                        break;
+                    }
+                    
+                    var delay = nextOccurrence.Value - now;
 
                     _logger.LogDebug("Task {TaskName} will run in {Delay}", _task.TaskName, delay);
 
