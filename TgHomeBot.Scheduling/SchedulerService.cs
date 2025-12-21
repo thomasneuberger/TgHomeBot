@@ -168,6 +168,80 @@ public class SchedulerService : IHostedService, IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets information about all scheduled tasks including disabled ones
+    /// </summary>
+    /// <returns>Collection of task information</returns>
+    public IEnumerable<(string TaskType, string TaskName, string CronExpression, bool Enabled, DateTime? NextExecutionTime)> GetScheduledTasks()
+    {
+        var configurations = LoadTaskConfigurations();
+        var result = new List<(string, string, string, bool, DateTime?)>();
+
+        foreach (var config in configurations)
+        {
+            DateTime? nextExecution = null;
+            string taskName = config.TaskType;
+
+            // Find the running task runner if it exists
+            var runner = _taskRunners.FirstOrDefault(r => r.TaskType == config.TaskType);
+            if (runner != null)
+            {
+                taskName = runner.TaskName;
+                nextExecution = runner.GetNextExecutionTime();
+            }
+            else if (config.Enabled)
+            {
+                // If enabled but not in runners, try to get task name from task creation
+                var task = CreateTask(config.TaskType);
+                if (task != null)
+                {
+                    taskName = task.TaskName;
+                    try
+                    {
+                        var cronExpression = CronExpression.Parse(config.CronExpression, CronFormat.Standard);
+                        nextExecution = cronExpression.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Utc);
+                    }
+                    catch
+                    {
+                        // Ignore cron parsing errors
+                    }
+                }
+            }
+
+            result.Add((config.TaskType, taskName, config.CronExpression, config.Enabled, nextExecution));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Executes a task immediately by its type name
+    /// </summary>
+    /// <param name="taskType">The type name of the task</param>
+    /// <returns>True if the task was executed successfully, false otherwise</returns>
+    public async Task<bool> RunTaskNowAsync(string taskType)
+    {
+        try
+        {
+            var task = CreateTask(taskType);
+            if (task == null)
+            {
+                _logger.LogWarning("Task type {TaskType} not found or could not be created", taskType);
+                return false;
+            }
+
+            _logger.LogInformation("Running task {TaskName} ({TaskType}) on demand", task.TaskName, taskType);
+            await task.ExecuteAsync(CancellationToken.None);
+            _logger.LogInformation("Task {TaskName} ({TaskType}) completed successfully", task.TaskName, taskType);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error running task {TaskType} on demand", taskType);
+            return false;
+        }
+    }
+
     public void Dispose()
     {
         _stoppingCts.Cancel();
@@ -185,12 +259,20 @@ public class SchedulerService : IHostedService, IDisposable
         private readonly CronExpression _cronExpression;
         private Task? _runningTask;
 
+        public string TaskType => _configuration.TaskType;
+        public string TaskName => _task.TaskName;
+
         public ScheduledTaskRunner(IScheduledTask task, TaskConfiguration configuration, ILogger logger)
         {
             _task = task ?? throw new ArgumentNullException(nameof(task));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _cronExpression = CronExpression.Parse(configuration.CronExpression, CronFormat.Standard);
+        }
+
+        public DateTime? GetNextExecutionTime()
+        {
+            return _cronExpression.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Utc);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
