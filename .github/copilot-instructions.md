@@ -142,7 +142,7 @@ public static class Bootstrap
 - Key dependencies:
   - **MediatR** (12.2.0) - CQRS pattern
   - **Telegram.Bot** (19.0.0) - Telegram integration
-  - **Serilog** (8.0.1) - Logging
+  - **Serilog.AspNetCore** (8.0.1) - Structured logging
   - **Cronos** (0.8.4) - Scheduling
 
 ## Best Practices
