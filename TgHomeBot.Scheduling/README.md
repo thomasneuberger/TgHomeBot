@@ -57,13 +57,6 @@ Examples:
 
 For more complex patterns, see the [Cronos documentation](https://github.com/HangfireIO/Cronos).
 
-- `0 * * * *` - Every hour at minute 0
-- `0 0 * * *` - Every day at midnight
-- `*/15 * * * *` - Every 15 minutes (Note: current implementation supports wildcards but not step values like */15)
-- `0 9 * * 1` - Every Monday at 9:00 AM
-
-**Note**: Day of week uses 0=Sunday convention (same as .NET's DayOfWeek enum)
-
 ## Creating a New Task
 
 To create a new scheduled task:
@@ -152,8 +145,6 @@ using TgHomeBot.Scheduling;
 // In Program.cs or Startup.cs
 builder.Services.AddScheduling();
 ```
-
-This registers the scheduler as a hosted service that will start automatically when the application starts. Make sure the `FileStorageOptions` is configured in your `appsettings.json`.
 
 This registers the scheduler as a hosted service that will start automatically when the application starts. Make sure the `FileStorageOptions` is configured in your `appsettings.json`.
 
