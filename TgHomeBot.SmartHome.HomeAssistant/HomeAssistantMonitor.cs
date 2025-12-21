@@ -43,13 +43,31 @@ public class HomeAssistantMonitor(
         baseurl = "ws" + baseurl[baseurl.IndexOf(':')..];
         var uri = new Uri($"{baseurl}/api/websocket");
 
+        // Use startup cancellation token for first attempt only
+        var retryToken = cancellationToken;
+        var firstAttempt = true;
+
         while (true)
         {
             try
             {
                 _webSocket ??= new ClientWebSocket();
-                await _webSocket.ConnectAsync(uri, cancellationToken);
+                await _webSocket.ConnectAsync(uri, retryToken);
                 break;
+            }
+            catch (OperationCanceledException) when (firstAttempt)
+            {
+                // If cancelled during startup, continue retrying in background
+                logger.LogInformation("Initial connection attempt to Home Assistant was cancelled, will continue retrying in background.");
+                SwitchToInternalToken(ref retryToken, ref firstAttempt);
+            }
+            catch (OperationCanceledException)
+            {
+                // If cancelled after startup (app shutdown), stop retrying
+                logger.LogInformation("Connection attempt to Home Assistant was cancelled during shutdown.");
+                _webSocket?.Dispose();
+                _webSocket = null;
+                return;
             }
             catch (Exception ex)
             {
@@ -64,13 +82,35 @@ public class HomeAssistantMonitor(
                 _webSocket?.Dispose();
                 _webSocket = null;
 
-                await Task.Delay(2000, cancellationToken);
+                // After first attempt, switch to internal cancellation token
+                if (firstAttempt)
+                {
+                    SwitchToInternalToken(ref retryToken, ref firstAttempt);
+                }
+
+                try
+                {
+                    await Task.Delay(2000, retryToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    logger.LogInformation("Connection retry to Home Assistant was cancelled during shutdown.");
+                    return;
+                }
             }
         }
 
         _reconnect = true;
 
         _ = Task.Run(WaitForMessages, _cancellationTokenSource.Token);
+    }
+
+    private void SwitchToInternalToken(ref CancellationToken retryToken, ref bool firstAttempt)
+    {
+        retryToken = _cancellationTokenSource.Token;
+        firstAttempt = false;
+        _webSocket?.Dispose();
+        _webSocket = null;
     }
 
     private async Task WaitForMessages()
