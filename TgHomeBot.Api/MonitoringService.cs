@@ -19,7 +19,8 @@ public class MonitoringService(IServiceProvider services, IOptions<SmartHomeOpti
         var smartHomeConnector = services.GetRequiredService<ISmartHomeConnector>();
         _smartHomeMonitor = await smartHomeConnector.CreateMonitorAsync(options.Value.MonitoredDevices, cancellationToken);
 
-        await _smartHomeMonitor.StartMonitoringAsync(cancellationToken);
+        // Start monitoring in the background to avoid blocking application startup
+        _ = _smartHomeMonitor.StartMonitoringAsync(cancellationToken);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
