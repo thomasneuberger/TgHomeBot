@@ -1,4 +1,5 @@
 ﻿using AsyncAwaitBestPractices;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TgHomeBot.Common.Contract;
 using TgHomeBot.SmartHome.Contract;
@@ -6,7 +7,10 @@ using TgHomeBot.SmartHome.Contract.Models;
 
 namespace TgHomeBot.Api;
 
-public class MonitoringService(IServiceProvider services, IOptions<SmartHomeOptions> options) : IHostedService
+public class MonitoringService(
+    IServiceProvider services, 
+    IOptions<SmartHomeOptions> options, 
+    ILogger<MonitoringService> logger) : IHostedService
 {
     private ISmartHomeMonitor? _smartHomeMonitor;
 
@@ -21,7 +25,8 @@ public class MonitoringService(IServiceProvider services, IOptions<SmartHomeOpti
         _smartHomeMonitor = await smartHomeConnector.CreateMonitorAsync(options.Value.MonitoredDevices, cancellationToken);
 
         // Start monitoring in the background to avoid blocking application startup
-        _smartHomeMonitor.StartMonitoringAsync(cancellationToken).SafeFireAndForget();
+        _smartHomeMonitor.StartMonitoringAsync(cancellationToken).SafeFireAndForget(onException: ex => 
+            logger.LogError(ex, "Unhandled error in background monitoring task"));
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
