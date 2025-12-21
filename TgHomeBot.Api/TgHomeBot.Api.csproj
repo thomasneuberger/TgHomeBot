@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AsyncAwaitBestPractices" />
         <PackageReference Include="MediatR" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" />
         <PackageReference Include="Serilog.AspNetCore" />

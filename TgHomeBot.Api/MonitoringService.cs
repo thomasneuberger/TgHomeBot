@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using AsyncAwaitBestPractices;
+using Microsoft.Extensions.Options;
 using TgHomeBot.Common.Contract;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
@@ -20,7 +21,7 @@ public class MonitoringService(IServiceProvider services, IOptions<SmartHomeOpti
         _smartHomeMonitor = await smartHomeConnector.CreateMonitorAsync(options.Value.MonitoredDevices, cancellationToken);
 
         // Start monitoring in the background to avoid blocking application startup
-        _ = _smartHomeMonitor.StartMonitoringAsync(cancellationToken);
+        _smartHomeMonitor.StartMonitoringAsync(cancellationToken).SafeFireAndForget();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
