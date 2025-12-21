@@ -14,6 +14,7 @@ COPY ["TgHomeBot.Notifications.Contract/TgHomeBot.Notifications.Contract.csproj"
 COPY ["TgHomeBot.Notifications.Telegram/TgHomeBot.Notifications.Telegram.csproj", "TgHomeBot.Notifications.Telegram/"]
 COPY ["TgHomeBot.Common.Contract/TgHomeBot.Common.Contract.csproj", "TgHomeBot.Common.Contract/"]
 COPY ["TgHomeBot.Scheduling/TgHomeBot.Scheduling.csproj", "TgHomeBot.Scheduling/"]
+COPY ["TgHomeBot.Scheduling.Contract/TgHomeBot.Scheduling.Contract.csproj", "TgHomeBot.Scheduling.Contract/"]
 RUN dotnet restore "TgHomeBot.Api/TgHomeBot.Api.csproj"
 COPY . .
 WORKDIR "/src/TgHomeBot.Api"
