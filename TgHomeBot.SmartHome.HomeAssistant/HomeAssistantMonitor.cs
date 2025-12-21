@@ -51,6 +51,13 @@ public class HomeAssistantMonitor(
                 await _webSocket.ConnectAsync(uri, cancellationToken);
                 break;
             }
+            catch (OperationCanceledException)
+            {
+                logger.LogInformation("Connection attempt to Home Assistant was cancelled.");
+                _webSocket?.Dispose();
+                _webSocket = null;
+                return;
+            }
             catch (Exception ex)
             {
                 logger.LogError("Error connecting to Home Assistant: [{Type}] {Exception}", ex.GetType().FullName, ex.Message);
@@ -64,7 +71,15 @@ public class HomeAssistantMonitor(
                 _webSocket?.Dispose();
                 _webSocket = null;
 
-                await Task.Delay(2000, cancellationToken);
+                try
+                {
+                    await Task.Delay(2000, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    logger.LogInformation("Connection retry to Home Assistant was cancelled.");
+                    return;
+                }
             }
         }
 
