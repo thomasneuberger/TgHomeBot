@@ -4,3 +4,19 @@ GET {{TgHomeBot.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+# Get all scheduled tasks
+GET {{TgHomeBot.Api_HostAddress}}/api/scheduler/tasks
+Accept: application/json
+
+###
+
+# Run a task immediately
+POST {{TgHomeBot.Api_HostAddress}}/api/scheduler/tasks/run
+Content-Type: application/json
+
+{
+  "taskType": "HourlyLogTask"
+}
+
+###

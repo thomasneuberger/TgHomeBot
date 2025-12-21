@@ -169,3 +169,91 @@ This project uses the following external libraries:
 - Fire-and-forget task execution uses AsyncAwaitBestPractices to avoid common async pitfalls
 - All times are handled in UTC to ensure consistent scheduling across timezones
 
+## API Endpoints
+
+The scheduler exposes REST API endpoints for monitoring and controlling scheduled tasks.
+
+### List Scheduled Tasks
+
+**GET** `/api/scheduler/tasks`
+
+Returns information about all scheduled tasks, including disabled ones.
+
+#### Response Example
+
+```json
+[
+  {
+    "taskType": "HourlyLogTask",
+    "taskName": "HourlyLogTask",
+    "cronExpression": "0 * * * *",
+    "enabled": true,
+    "nextExecutionTime": "2024-12-21T15:00:00Z"
+  }
+]
+```
+
+**Response Fields:**
+- `taskType`: The type name of the task (used for configuration and execution)
+- `taskName`: The display name of the task
+- `cronExpression`: The cron expression defining when the task runs
+- `enabled`: Whether the task is currently enabled
+- `nextExecutionTime`: When the task will next execute (null for disabled tasks)
+
+### Run Task Immediately
+
+**POST** `/api/scheduler/tasks/run`
+
+Executes a task immediately without changing its schedule. This endpoint can run even disabled tasks.
+
+#### Request Body
+
+```json
+{
+  "taskType": "HourlyLogTask"
+}
+```
+
+#### Response
+
+**Success (200 OK):**
+```json
+{
+  "message": "Task HourlyLogTask executed successfully"
+}
+```
+
+**Error (400 Bad Request):**
+```json
+{
+  "message": "Failed to execute task HourlyLogTask. Check logs for details."
+}
+```
+
+### API Testing
+
+#### Using Swagger UI
+
+1. Start the application: `dotnet run --project TgHomeBot.Api`
+2. Open browser to: http://localhost:5271/swagger
+3. Expand the "Scheduler" section
+4. Try the endpoints
+
+#### Using curl
+
+List all tasks:
+```bash
+curl http://localhost:5271/api/scheduler/tasks
+```
+
+Run a task immediately:
+```bash
+curl -X POST http://localhost:5271/api/scheduler/tasks/run \
+  -H "Content-Type: application/json" \
+  -d '{"taskType": "HourlyLogTask"}'
+```
+
+#### Using the .http file
+
+The `TgHomeBot.Api/TgHomeBot.Api.http` file contains example requests that can be used with REST clients like the VS Code REST Client extension.
+
