@@ -59,10 +59,7 @@ public class HomeAssistantMonitor(
             {
                 // If cancelled during startup, continue retrying in background
                 logger.LogInformation("Initial connection attempt to Home Assistant was cancelled, will continue retrying in background.");
-                retryToken = _cancellationTokenSource.Token;
-                firstAttempt = false;
-                _webSocket?.Dispose();
-                _webSocket = null;
+                SwitchToInternalToken(ref retryToken, ref firstAttempt);
             }
             catch (OperationCanceledException)
             {
@@ -88,8 +85,7 @@ public class HomeAssistantMonitor(
                 // After first attempt, switch to internal cancellation token
                 if (firstAttempt)
                 {
-                    firstAttempt = false;
-                    retryToken = _cancellationTokenSource.Token;
+                    SwitchToInternalToken(ref retryToken, ref firstAttempt);
                 }
 
                 try
@@ -107,6 +103,14 @@ public class HomeAssistantMonitor(
         _reconnect = true;
 
         _ = Task.Run(WaitForMessages, _cancellationTokenSource.Token);
+    }
+
+    private void SwitchToInternalToken(ref CancellationToken retryToken, ref bool firstAttempt)
+    {
+        retryToken = _cancellationTokenSource.Token;
+        firstAttempt = false;
+        _webSocket?.Dispose();
+        _webSocket = null;
     }
 
     private async Task WaitForMessages()
