@@ -16,7 +16,8 @@ public static class SchedulingServiceExtensions
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddScheduling(this IServiceCollection services)
     {
-        services.AddSingleton<IHostedService, SchedulerService>();
+        services.AddSingleton<SchedulerService>();
+        services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<SchedulerService>());
 
         return services;
     }

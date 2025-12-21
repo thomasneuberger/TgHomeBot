@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using TgHomeBot.Api.Models;
 using TgHomeBot.Scheduling;
 
@@ -10,10 +9,12 @@ namespace TgHomeBot.Api.Controllers;
 public class SchedulerController : ControllerBase
 {
     private readonly ILogger<SchedulerController> _logger;
+    private readonly SchedulerService _schedulerService;
 
-    public SchedulerController(ILogger<SchedulerController> logger)
+    public SchedulerController(ILogger<SchedulerController> logger, SchedulerService schedulerService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _schedulerService = schedulerService ?? throw new ArgumentNullException(nameof(schedulerService));
     }
 
     /// <summary>
@@ -21,19 +22,9 @@ public class SchedulerController : ControllerBase
     /// </summary>
     /// <returns>Collection of scheduled task information</returns>
     [HttpGet("tasks")]
-    public ActionResult<IEnumerable<ScheduledTaskInfo>> GetScheduledTasks([FromServices] IEnumerable<IHostedService> services)
+    public ActionResult<IEnumerable<ScheduledTaskInfo>> GetScheduledTasks()
     {
-        var schedulerService = services
-            .OfType<SchedulerService>()
-            .FirstOrDefault();
-
-        if (schedulerService is null)
-        {
-            _logger.LogWarning("SchedulerService not found");
-            return NotFound("Scheduler service is not available");
-        }
-
-        var tasks = schedulerService.GetScheduledTasks()
+        var tasks = _schedulerService.GetScheduledTasks()
             .Select(t => new ScheduledTaskInfo
             {
                 TaskType = t.TaskType,
@@ -53,24 +44,14 @@ public class SchedulerController : ControllerBase
     /// <param name="request">Request containing the task type to run</param>
     /// <returns>Result of the task execution</returns>
     [HttpPost("tasks/run")]
-    public async Task<IActionResult> RunTaskNow([FromBody] RunTaskRequest request, [FromServices] IEnumerable<IHostedService> services)
+    public async Task<IActionResult> RunTaskNow([FromBody] RunTaskRequest request)
     {
         if (string.IsNullOrWhiteSpace(request?.TaskType))
         {
             return BadRequest("TaskType is required");
         }
 
-        var schedulerService = services
-            .OfType<SchedulerService>()
-            .FirstOrDefault();
-
-        if (schedulerService is null)
-        {
-            _logger.LogWarning("SchedulerService not found");
-            return NotFound("Scheduler service is not available");
-        }
-
-        var success = await schedulerService.RunTaskNowAsync(request.TaskType);
+        var success = await _schedulerService.RunTaskNowAsync(request.TaskType);
         
         if (success)
         {

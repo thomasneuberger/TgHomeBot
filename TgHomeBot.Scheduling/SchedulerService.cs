@@ -201,9 +201,10 @@ public class SchedulerService : IHostedService, IDisposable
                         var cronExpression = CronExpression.Parse(config.CronExpression, CronFormat.Standard);
                         nextExecution = cronExpression.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Utc);
                     }
-                    catch
+                    catch (CronFormatException ex)
                     {
-                        // Ignore cron parsing errors
+                        _logger.LogWarning(ex, "Invalid cron expression for task {TaskType}: {CronExpression}", 
+                            config.TaskType, config.CronExpression);
                     }
                 }
             }
