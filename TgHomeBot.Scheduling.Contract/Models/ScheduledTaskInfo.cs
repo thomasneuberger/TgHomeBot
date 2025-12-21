@@ -1,4 +1,4 @@
-namespace TgHomeBot.Api.Models;
+namespace TgHomeBot.Scheduling.Contract.Models;
 
 /// <summary>
 /// Information about a scheduled task

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TgHomeBot.Api.Models;
-using TgHomeBot.Scheduling;
+using TgHomeBot.Scheduling.Contract;
+using TgHomeBot.Scheduling.Contract.Models;
 
 namespace TgHomeBot.Api.Controllers;
 
@@ -9,9 +10,9 @@ namespace TgHomeBot.Api.Controllers;
 public class SchedulerController : ControllerBase
 {
     private readonly ILogger<SchedulerController> _logger;
-    private readonly SchedulerService _schedulerService;
+    private readonly ISchedulerService _schedulerService;
 
-    public SchedulerController(ILogger<SchedulerController> logger, SchedulerService schedulerService)
+    public SchedulerController(ILogger<SchedulerController> logger, ISchedulerService schedulerService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _schedulerService = schedulerService ?? throw new ArgumentNullException(nameof(schedulerService));
@@ -24,17 +25,7 @@ public class SchedulerController : ControllerBase
     [HttpGet("tasks")]
     public ActionResult<IEnumerable<ScheduledTaskInfo>> GetScheduledTasks()
     {
-        var tasks = _schedulerService.GetScheduledTasks()
-            .Select(t => new ScheduledTaskInfo
-            {
-                TaskType = t.TaskType,
-                TaskName = t.TaskName,
-                CronExpression = t.CronExpression,
-                Enabled = t.Enabled,
-                NextExecutionTime = t.NextExecutionTime
-            })
-            .ToList();
-
+        var tasks = _schedulerService.GetScheduledTasks().ToList();
         return Ok(tasks);
     }
 

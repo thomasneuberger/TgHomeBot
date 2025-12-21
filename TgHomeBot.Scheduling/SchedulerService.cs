@@ -6,13 +6,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using TgHomeBot.Common.Contract;
+using TgHomeBot.Scheduling.Contract;
+using TgHomeBot.Scheduling.Contract.Models;
 
 namespace TgHomeBot.Scheduling;
 
 /// <summary>
 /// Hosted service that manages scheduled tasks
 /// </summary>
-public class SchedulerService : IHostedService, IDisposable
+public class SchedulerService : ISchedulerService, IHostedService, IDisposable
 {
     private readonly ILogger<SchedulerService> _logger;
     private readonly IServiceProvider _serviceProvider;
@@ -172,10 +174,10 @@ public class SchedulerService : IHostedService, IDisposable
     /// Gets information about all scheduled tasks including disabled ones
     /// </summary>
     /// <returns>Collection of task information</returns>
-    public IEnumerable<(string TaskType, string TaskName, string CronExpression, bool Enabled, DateTime? NextExecutionTime)> GetScheduledTasks()
+    public IEnumerable<ScheduledTaskInfo> GetScheduledTasks()
     {
         var configurations = LoadTaskConfigurations();
-        var result = new List<(string, string, string, bool, DateTime?)>();
+        var result = new List<ScheduledTaskInfo>();
 
         foreach (var config in configurations)
         {
@@ -209,7 +211,14 @@ public class SchedulerService : IHostedService, IDisposable
                 }
             }
 
-            result.Add((config.TaskType, taskName, config.CronExpression, config.Enabled, nextExecution));
+            result.Add(new ScheduledTaskInfo
+            {
+                TaskType = config.TaskType,
+                TaskName = taskName,
+                CronExpression = config.CronExpression,
+                Enabled = config.Enabled,
+                NextExecutionTime = nextExecution
+            });
         }
 
         return result;

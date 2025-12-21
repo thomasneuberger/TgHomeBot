@@ -29,6 +29,7 @@
       <ProjectReference Include="..\TgHomeBot.Scheduling\TgHomeBot.Scheduling.csproj" />
       <ProjectReference Include="..\TgHomeBot.SmartHome.Contract\TgHomeBot.SmartHome.Contract.csproj" />
       <ProjectReference Include="..\TgHomeBot.SmartHome.HomeAssistant\TgHomeBot.SmartHome.HomeAssistant.csproj" />
+      <ProjectReference Include="..\TgHomeBot.Scheduling.Contract\TgHomeBot.Scheduling.Contract.csproj" />
     </ItemGroup>
 
 </Project>
