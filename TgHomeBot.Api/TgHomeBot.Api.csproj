@@ -23,9 +23,16 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="ScheduledTasks\*.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\TgHomeBot.Common.Contract\TgHomeBot.Common.Contract.csproj" />
       <ProjectReference Include="..\TgHomeBot.Notifications.Contract\TgHomeBot.Notifications.Contract.csproj" />
       <ProjectReference Include="..\TgHomeBot.Notifications.Telegram\TgHomeBot.Notifications.Telegram.csproj" />
+      <ProjectReference Include="..\TgHomeBot.Scheduling\TgHomeBot.Scheduling.csproj" />
       <ProjectReference Include="..\TgHomeBot.SmartHome.Contract\TgHomeBot.SmartHome.Contract.csproj" />
       <ProjectReference Include="..\TgHomeBot.SmartHome.HomeAssistant\TgHomeBot.SmartHome.HomeAssistant.csproj" />
     </ItemGroup>
