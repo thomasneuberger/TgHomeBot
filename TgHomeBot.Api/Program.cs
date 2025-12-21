@@ -5,6 +5,7 @@ using Serilog.Templates.Themes;
 using TgHomeBot.Api;
 using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Telegram;
+using TgHomeBot.Scheduling;
 using TgHomeBot.SmartHome.HomeAssistant;
 
 Log.Logger = new LoggerConfiguration()
@@ -40,6 +41,8 @@ builder.Services.AddSingleton<ILogFileProvider, SerilogLogFileProvider>();
 builder.Services.AddTelegram(builder.Configuration);
 
 builder.Services.AddSingleton<IHostedService, NotificationService>();
+
+builder.Services.AddScheduling();
 
 builder.Services.AddHttpClient();
 
