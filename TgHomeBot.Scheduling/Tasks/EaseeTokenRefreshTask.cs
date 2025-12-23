@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Logging;
 using TgHomeBot.Charging.Contract;
-using TgHomeBot.Scheduling;
 
-namespace TgHomeBot.Charging.Easee;
+namespace TgHomeBot.Scheduling.Tasks;
 
 /// <summary>
 /// Scheduled task to refresh Easee authentication token

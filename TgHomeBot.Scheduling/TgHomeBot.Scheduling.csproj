@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TgHomeBot.Common.Contract\TgHomeBot.Common.Contract.csproj" />
     <ProjectReference Include="..\TgHomeBot.Scheduling.Contract\TgHomeBot.Scheduling.Contract.csproj" />
+    <ProjectReference Include="..\TgHomeBot.Charging.Contract\TgHomeBot.Charging.Contract.csproj" />
   </ItemGroup>
 
 </Project>
