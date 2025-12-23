@@ -264,7 +264,7 @@ internal class EaseeConnector : IChargingConnector
             }
 
             _logger.LogInformation("Successfully fetched {Count} chargers", chargers.Count);
-            return chargers.Select(c => c.Id).ToArray();
+            return chargers.Select(c => c.Id.ToString()).ToArray();
         }
         catch (Exception ex)
         {
