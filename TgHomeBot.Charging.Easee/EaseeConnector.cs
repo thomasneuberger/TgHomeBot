@@ -284,7 +284,7 @@ internal class EaseeConnector : IChargingConnector
 
             var fromStr = from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var toStr = to.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            var url = $"/api/sessions/charger/{chargerId}/total/{fromStr}/{toStr}";
+            var url = $"/api/sessions/charger/{chargerId}/sessions/{fromStr}/{toStr}";
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             AddAuthorizationHeader(request);
