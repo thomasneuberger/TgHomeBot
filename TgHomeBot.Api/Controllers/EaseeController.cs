@@ -23,6 +23,8 @@ public class EaseeController : Controller
     [HttpGet]
     public IActionResult Login()
     {
+        _logger.LogInformation("Easee login page accessed");
+        
         var model = new EaseeLoginViewModel
         {
             IsAuthenticated = _chargingConnector.IsAuthenticated
@@ -34,8 +36,11 @@ public class EaseeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(EaseeLoginViewModel model)
     {
+        _logger.LogInformation("Easee login attempt for user {UserName}", model.UserName);
+        
         if (!ModelState.IsValid)
         {
+            _logger.LogWarning("Easee login validation failed for user {UserName}", model.UserName);
             model.IsAuthenticated = _chargingConnector.IsAuthenticated;
             return View(model);
         }
@@ -44,6 +49,7 @@ public class EaseeController : Controller
 
         if (success)
         {
+            _logger.LogInformation("Easee authentication successful for user {UserName}", model.UserName);
             model.IsAuthenticated = true;
             model.Message = "Erfolgreich authentifiziert!";
             ModelState.Clear();
@@ -52,6 +58,7 @@ public class EaseeController : Controller
         }
         else
         {
+            _logger.LogWarning("Easee authentication failed for user {UserName}", model.UserName);
             model.IsAuthenticated = false;
             model.Message = "Authentifizierung fehlgeschlagen. Bitte überprüfen Sie Ihre Zugangsdaten.";
         }
