@@ -171,7 +171,7 @@ internal class UserAliasService : IUserAliasService
                 WriteIndented = true
             });
 
-            var tempFilePath = $"{_userIdsFilePath}.tmp";
+            var tempFilePath = $"{_userIdsFilePath}.{Guid.NewGuid()}.tmp";
             File.WriteAllText(tempFilePath, json);
             File.Move(tempFilePath, _userIdsFilePath, overwrite: true);
 
@@ -223,7 +223,7 @@ internal class UserAliasService : IUserAliasService
                 WriteIndented = true
             });
 
-            var tempFilePath = $"{_aliasesFilePath}.tmp";
+            var tempFilePath = $"{_aliasesFilePath}.{Guid.NewGuid()}.tmp";
             File.WriteAllText(tempFilePath, json);
             File.Move(tempFilePath, _aliasesFilePath, overwrite: true);
 

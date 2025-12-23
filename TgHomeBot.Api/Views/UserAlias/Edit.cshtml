@@ -28,7 +28,7 @@
             <div class="mb-3">
                 <label for="tokenIdsInput" class="form-label">Token-IDs</label>
                 <input type="text" id="tokenIdsInput" name="tokenIdsInput" class="form-control" 
-                       value="@string.Join(", ", Model.TokenIds)" 
+                       value="@Html.Raw(System.Net.WebUtility.HtmlEncode(string.Join(", ", Model.TokenIds)))" 
                        placeholder="z.B. token1, token2, token3" />
                 <div class="form-text">
                     Geben Sie eine kommagetrennte Liste von alphanumerischen Token-IDs ein. 
