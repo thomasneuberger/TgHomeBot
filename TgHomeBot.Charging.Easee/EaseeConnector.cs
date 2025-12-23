@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -281,8 +282,8 @@ internal class EaseeConnector : IChargingConnector
             _logger.LogInformation("Fetching charging sessions for charger {ChargerId} from {From} to {To}",
                 chargerId, from, to);
 
-            var fromStr = from.ToString("yyyy-MM-dd");
-            var toStr = to.ToString("yyyy-MM-dd");
+            var fromStr = from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var toStr = to.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var url = $"/api/sessions/charger/{chargerId}/total/{fromStr}/{toStr}";
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);

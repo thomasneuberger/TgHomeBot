@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
@@ -19,7 +20,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider) : IComman
 
         // Get sessions for the last two months
         var to = DateTime.UtcNow.Date;
-        var from = to.AddMonths(-2).AddDays(1); // Start from first day of 2 months ago
+        var from = new DateTime(to.Year, to.Month, 1).AddMonths(-2); // First day of 2 months ago
 
         var sessions = await mediator.Send(new GetChargingSessionsRequest(from, to), cancellationToken);
 
@@ -54,7 +55,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider) : IComman
                 reportLines.Add($"👤 Benutzer: {session.UserId}");
             }
 
-            var connectedTime = session.CarConnected.ToString("dd.MM.yyyy HH:mm");
+            var connectedTime = session.CarConnected.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
             var duration = FormatDuration(session.ActualDurationSeconds);
             
             reportLines.Add($"  🔌 {connectedTime} | {session.KiloWattHours:F2} kWh | {duration}");

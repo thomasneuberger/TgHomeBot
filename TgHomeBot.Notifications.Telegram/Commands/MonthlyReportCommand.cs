@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
@@ -19,7 +20,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider) : ICommand
 
         // Get sessions for the last two months
         var to = DateTime.UtcNow.Date;
-        var from = to.AddMonths(-2).AddDays(1); // Start from first day of 2 months ago
+        var from = new DateTime(to.Year, to.Month, 1).AddMonths(-2); // First day of 2 months ago
 
         var sessions = await mediator.Send(new GetChargingSessionsRequest(from, to), cancellationToken);
 
@@ -50,7 +51,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider) : ICommand
 
         foreach (var entry in monthlyReport)
         {
-            var monthName = new DateTime(entry.Year, entry.Month, 1).ToString("MMMM yyyy");
+            var monthName = new DateTime(entry.Year, entry.Month, 1).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("de-DE"));
             reportLines.Add($"👤 {entry.UserId} - {monthName}: {entry.TotalKwh:F2} kWh");
         }
 
