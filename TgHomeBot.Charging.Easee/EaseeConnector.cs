@@ -1,8 +1,11 @@
+using System.Globalization;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TgHomeBot.Charging.Contract;
+using TgHomeBot.Charging.Contract.Models;
 using TgHomeBot.Charging.Easee.Models;
 using TgHomeBot.Common.Contract;
 
@@ -228,6 +231,148 @@ internal class EaseeConnector : IChargingConnector
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error saving token to file");
+        }
+    }
+
+    public async Task<ChargingResult<IReadOnlyList<ChargerInfo>>> GetChargersAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await EnsureAuthenticatedAsync(cancellationToken);
+
+            _logger.LogInformation("Fetching chargers from Easee API");
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/api/accounts/chargers");
+            AddAuthorizationHeader(request);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Failed to get chargers with status {StatusCode}: {ErrorContent}",
+                    response.StatusCode, errorContent);
+                return ChargingResult<IReadOnlyList<ChargerInfo>>.Error($"Fehler beim Abrufen der Ladestationen (HTTP {response.StatusCode})");
+            }
+
+            var sites = await response.Content.ReadFromJsonAsync<List<EaseeSite>>(cancellationToken);
+
+            if (sites == null)
+            {
+                _logger.LogError("Failed to deserialize chargers response");
+                return ChargingResult<IReadOnlyList<ChargerInfo>>.Error("Fehler beim Verarbeiten der Ladestationen-Daten");
+            }
+
+            var chargers = sites
+                .SelectMany(s => s.Circuits)
+                .SelectMany(c => c.Chargers)
+                .Select(ch => new ChargerInfo
+                {
+                    Id = ch.Id,
+                    Name = ch.Name
+                })
+                .ToList();
+
+            _logger.LogInformation("Successfully fetched {Count} chargers", chargers.Count);
+            return ChargingResult<IReadOnlyList<ChargerInfo>>.Ok(chargers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching chargers");
+            return ChargingResult<IReadOnlyList<ChargerInfo>>.Error($"Fehler beim Abrufen der Ladestationen: {ex.Message}");
+        }
+    }
+
+    public async Task<ChargingResult<IReadOnlyList<string>>> GetChargerIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await GetChargersAsync(cancellationToken);
+        if (!result.Success)
+        {
+            return ChargingResult<IReadOnlyList<string>>.Error(result.ErrorMessage!);
+        }
+
+        var ids = result.Data!.Select(c => c.Id).ToList();
+        return ChargingResult<IReadOnlyList<string>>.Ok(ids);
+    }
+
+    public async Task<ChargingResult<IReadOnlyList<ChargingSession>>> GetChargingSessionsAsync(string chargerId, string chargerName, DateTime from, DateTime to, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await EnsureAuthenticatedAsync(cancellationToken);
+
+            _logger.LogInformation("Fetching charging sessions for charger {ChargerName} ({ChargerId}) from {From} to {To}",
+                chargerName, chargerId, from, to);
+
+            var fromStr = from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var toStr = to.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var url = $"/api/sessions/charger/{chargerId}/sessions/{fromStr}/{toStr}";
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            AddAuthorizationHeader(request);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Failed to get charging sessions for {ChargerName} with status {StatusCode}: {ErrorContent}",
+                    chargerName, response.StatusCode, errorContent);
+                return ChargingResult<IReadOnlyList<ChargingSession>>.Error($"Fehler beim Abrufen der Ladevorgänge für {chargerName} (HTTP {response.StatusCode})");
+            }
+
+            var sessions = await response.Content.ReadFromJsonAsync<List<EaseeChargingSession>>(cancellationToken);
+
+            if (sessions == null)
+            {
+                _logger.LogError("Failed to deserialize charging sessions response for {ChargerName}", chargerName);
+                return ChargingResult<IReadOnlyList<ChargingSession>>.Error($"Fehler beim Verarbeiten der Ladevorgänge-Daten für {chargerName}");
+            }
+
+            _logger.LogInformation("Successfully fetched {Count} charging sessions for charger {ChargerName}",
+                sessions.Count, chargerName);
+
+            var chargingSessions = sessions.Select(s => new ChargingSession
+            {
+                UserId = s.UserId.ToString(),
+                CarConnected = s.CarConnected,
+                CarDisconnected = s.CarDisconnected,
+                KiloWattHours = s.KiloWattHours,
+                ActualDurationSeconds = s.ActualDurationSeconds
+            }).ToList();
+
+            return ChargingResult<IReadOnlyList<ChargingSession>>.Ok(chargingSessions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching charging sessions for charger {ChargerName}", chargerName);
+            return ChargingResult<IReadOnlyList<ChargingSession>>.Error($"Fehler beim Abrufen der Ladevorgänge für {chargerName}: {ex.Message}");
+        }
+    }
+
+    private async Task EnsureAuthenticatedAsync(CancellationToken cancellationToken)
+    {
+        if (!IsAuthenticated)
+        {
+            var refreshed = await RefreshTokenAsync(cancellationToken);
+            if (!refreshed)
+            {
+                throw new InvalidOperationException("Not authenticated with Easee API. Please authenticate first.");
+            }
+        }
+    }
+
+    private void AddAuthorizationHeader(HttpRequestMessage request)
+    {
+        string? accessToken;
+        lock (_lock)
+        {
+            accessToken = _tokenData?.AccessToken;
+        }
+
+        if (accessToken != null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         }
     }
 }

@@ -26,6 +26,8 @@ public static class Bootstrap
         services.AddSingleton<ICommand, HelpCommand>();
         services.AddSingleton<ICommand, LogCommand>();
         services.AddSingleton<ICommand, LogFileCommand>();
+        services.AddSingleton<ICommand, MonthlyReportCommand>();
+        services.AddSingleton<ICommand, DetailedReportCommand>();
 
 		services.AddSingleton<INotificationConnector, TelegramConnector>();
 

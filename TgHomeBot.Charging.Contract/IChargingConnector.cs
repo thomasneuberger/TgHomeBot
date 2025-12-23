@@ -1,3 +1,5 @@
+using TgHomeBot.Charging.Contract.Models;
+
 namespace TgHomeBot.Charging.Contract;
 
 /// <summary>
@@ -26,4 +28,29 @@ public interface IChargingConnector
     /// </summary>
     /// <returns>True if authenticated, false otherwise</returns>
     bool IsAuthenticated { get; }
+
+    /// <summary>
+    /// Gets all charger IDs available to the authenticated user
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Result containing list of charger IDs or error message</returns>
+    Task<ChargingResult<IReadOnlyList<string>>> GetChargerIdsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets charging sessions for a specific charger within a date range
+    /// </summary>
+    /// <param name="chargerId">ID of the charger</param>
+    /// <param name="chargerName">Name of the charger for logging purposes</param>
+    /// <param name="from">Start date</param>
+    /// <param name="to">End date</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Result containing list of charging sessions or error message</returns>
+    Task<ChargingResult<IReadOnlyList<ChargingSession>>> GetChargingSessionsAsync(string chargerId, string chargerName, DateTime from, DateTime to, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all chargers with their information (ID and name)
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Result containing list of chargers or error message</returns>
+    Task<ChargingResult<IReadOnlyList<ChargerInfo>>> GetChargersAsync(CancellationToken cancellationToken = default);
 }
