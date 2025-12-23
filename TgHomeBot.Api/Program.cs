@@ -3,6 +3,7 @@ using Serilog;
 using Serilog.Templates;
 using Serilog.Templates.Themes;
 using TgHomeBot.Api;
+using TgHomeBot.Charging.Easee;
 using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Telegram;
 using TgHomeBot.Scheduling;
@@ -44,11 +45,13 @@ builder.Services.AddSingleton<IHostedService, NotificationService>();
 
 builder.Services.AddScheduling();
 
+builder.Services.AddEasee(builder.Configuration);
+
 builder.Services.AddHttpClient();
 
 builder.Services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblyContaining<Program>());
 
-builder.Services.AddControllers()
+builder.Services.AddControllersWithViews()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
