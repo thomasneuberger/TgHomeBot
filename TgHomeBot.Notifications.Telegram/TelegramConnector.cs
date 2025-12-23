@@ -23,7 +23,7 @@ internal class TelegramConnector(
 	private const int MaxRetryDelaySeconds = 30;
 
     private string? _botName;
-	private bool _isConnected;
+	private volatile bool _isConnected;
 
     public async Task Connect()
 	{
@@ -100,9 +100,9 @@ internal class TelegramConnector(
 
 				try
 				{
-					var delay = TimeSpan.FromSeconds(Math.Min(MaxRetryDelaySeconds, Math.Pow(2, retryCount)));
-					logger.LogInformation("Retrying Telegram connection in {Delay} seconds...", delay.TotalSeconds);
-					await Task.Delay(delay, cancellationToken);
+					var delaySeconds = Math.Min(MaxRetryDelaySeconds, 1 << retryCount);
+					logger.LogInformation("Retrying Telegram connection in {Delay} seconds...", delaySeconds);
+					await Task.Delay(TimeSpan.FromSeconds(delaySeconds), cancellationToken);
 				}
 				catch (OperationCanceledException)
 				{
