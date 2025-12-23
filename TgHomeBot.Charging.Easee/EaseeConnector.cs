@@ -334,7 +334,7 @@ internal class EaseeConnector : IChargingConnector
 
             var chargingSessions = sessions.Select(s => new ChargingSession
             {
-                UserId = s.UserId,
+                UserId = s.UserId.ToString(),
                 CarConnected = s.CarConnected,
                 CarDisconnected = s.CarDisconnected,
                 KiloWattHours = s.KiloWattHours,

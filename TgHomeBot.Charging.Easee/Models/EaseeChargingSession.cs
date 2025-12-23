@@ -20,7 +20,7 @@ internal class EaseeChargingSession
     public required double KiloWattHours { get; set; }
 
     [JsonPropertyName("authUser")]
-    public required string UserId { get; set; }
+    public required int UserId { get; set; }
 
     [JsonPropertyName("sessionEnergyDetails")]
     public EaseeSessionEnergyDetails? SessionEnergyDetails { get; set; }
