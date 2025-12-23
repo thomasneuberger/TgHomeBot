@@ -9,6 +9,8 @@ namespace TgHomeBot.Notifications.Telegram.Commands;
 
 internal class DetailedReportCommand(IServiceProvider serviceProvider) : ICommand
 {
+    private const int MaxTelegramMessageLength = 4000;
+
     public string Name => "/detailedreport";
 
     public string Description => "Detaillierter Bericht aller Ladevorgänge";
@@ -38,7 +40,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider) : IComman
             .ThenBy(s => s.CarConnected)
             .ToList();
 
-        var reportLines = new List<string> { "📋 Detaillierter Ladebericht (letzte 2 Monate):\n" };
+        var reportLines = new List<string> { "📋 Detaillierter Ladebericht (letzte 2 Monate):" };
 
         string? currentUserId = null;
 
@@ -64,15 +66,14 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider) : IComman
         var report = string.Join('\n', reportLines);
 
         // Split the message if it's too long (Telegram has a 4096 character limit)
-        const int maxMessageLength = 4000;
-        if (report.Length <= maxMessageLength)
+        if (report.Length <= MaxTelegramMessageLength)
         {
             await client.SendTextMessageAsync(new ChatId(message.Chat.Id), report, cancellationToken: cancellationToken);
         }
         else
         {
             // Split by lines and send multiple messages
-            var messages = SplitIntoMessages(reportLines, maxMessageLength);
+            var messages = SplitIntoMessages(reportLines, MaxTelegramMessageLength);
             foreach (var msg in messages)
             {
                 await client.SendTextMessageAsync(new ChatId(message.Chat.Id), msg, cancellationToken: cancellationToken);

@@ -47,7 +47,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider) : ICommand
             .ThenBy(x => x.Month)
             .ToList();
 
-        var reportLines = new List<string> { "📊 Monatlicher Ladebericht (letzte 2 Monate):\n" };
+        var reportLines = new List<string> { "📊 Monatlicher Ladebericht (letzte 2 Monate):" };
 
         foreach (var entry in monthlyReport)
         {
