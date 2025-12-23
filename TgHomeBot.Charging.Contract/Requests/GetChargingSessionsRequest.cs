@@ -6,7 +6,7 @@ namespace TgHomeBot.Charging.Contract.Requests;
 /// <summary>
 /// Request to get charging sessions for all chargers within a date range
 /// </summary>
-public class GetChargingSessionsRequest(DateTime from, DateTime to) : IRequest<IReadOnlyList<ChargingSession>>
+public class GetChargingSessionsRequest(DateTime from, DateTime to) : IRequest<ChargingResult<IReadOnlyList<ChargingSession>>>
 {
     public DateTime From => from;
     public DateTime To => to;

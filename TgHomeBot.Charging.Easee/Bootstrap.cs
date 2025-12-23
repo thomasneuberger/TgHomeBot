@@ -16,7 +16,7 @@ public static class Bootstrap
 
         services.AddSingleton<IChargingConnector, EaseeConnector>();
 
-        services.AddTransient<IRequestHandler<GetChargingSessionsRequest, IReadOnlyList<ChargingSession>>, GetChargingSessionsRequestHandler>();
+        services.AddTransient<IRequestHandler<GetChargingSessionsRequest, ChargingResult<IReadOnlyList<ChargingSession>>>, GetChargingSessionsRequestHandler>();
 
         return services;
     }
