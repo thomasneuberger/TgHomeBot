@@ -61,11 +61,18 @@ public class UserAliasController : Controller
         }
 
         // Filter out empty token IDs
-        model.TokenIds = model.TokenIds
-            .Where(t => !string.IsNullOrWhiteSpace(t))
-            .Select(t => t.Trim())
-            .Distinct()
-            .ToList();
+        if (model.TokenIds != null)
+        {
+            model.TokenIds = model.TokenIds
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Select(t => t.Trim())
+                .Distinct()
+                .ToList();
+        }
+        else
+        {
+            model.TokenIds = [];
+        }
 
         _userAliasService.SaveAlias(model);
 
