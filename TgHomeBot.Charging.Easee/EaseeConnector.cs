@@ -1,8 +1,10 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TgHomeBot.Charging.Contract;
+using TgHomeBot.Charging.Contract.Models;
 using TgHomeBot.Charging.Easee.Models;
 using TgHomeBot.Common.Contract;
 
@@ -228,6 +230,124 @@ internal class EaseeConnector : IChargingConnector
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error saving token to file");
+        }
+    }
+
+    public async Task<IReadOnlyList<string>> GetChargerIdsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await EnsureAuthenticatedAsync(cancellationToken);
+
+            _logger.LogInformation("Fetching charger IDs from Easee API");
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/api/accounts/chargers");
+            AddAuthorizationHeader(request);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Failed to get chargers with status {StatusCode}: {ErrorContent}",
+                    response.StatusCode, errorContent);
+                return Array.Empty<string>();
+            }
+
+            var chargers = await response.Content.ReadFromJsonAsync<List<EaseeCharger>>(cancellationToken);
+
+            if (chargers == null)
+            {
+                _logger.LogError("Failed to deserialize chargers response");
+                return Array.Empty<string>();
+            }
+
+            _logger.LogInformation("Successfully fetched {Count} chargers", chargers.Count);
+            return chargers.Select(c => c.Id).ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching charger IDs");
+            return Array.Empty<string>();
+        }
+    }
+
+    public async Task<IReadOnlyList<ChargingSession>> GetChargingSessionsAsync(string chargerId, DateTime from, DateTime to, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await EnsureAuthenticatedAsync(cancellationToken);
+
+            _logger.LogInformation("Fetching charging sessions for charger {ChargerId} from {From} to {To}",
+                chargerId, from, to);
+
+            var fromStr = from.ToString("yyyy-MM-dd");
+            var toStr = to.ToString("yyyy-MM-dd");
+            var url = $"/api/sessions/charger/{chargerId}/total/{fromStr}/{toStr}";
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            AddAuthorizationHeader(request);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Failed to get charging sessions with status {StatusCode}: {ErrorContent}",
+                    response.StatusCode, errorContent);
+                return Array.Empty<ChargingSession>();
+            }
+
+            var sessions = await response.Content.ReadFromJsonAsync<List<EaseeChargingSession>>(cancellationToken);
+
+            if (sessions == null)
+            {
+                _logger.LogError("Failed to deserialize charging sessions response");
+                return Array.Empty<ChargingSession>();
+            }
+
+            _logger.LogInformation("Successfully fetched {Count} charging sessions for charger {ChargerId}",
+                sessions.Count, chargerId);
+
+            return sessions.Select(s => new ChargingSession
+            {
+                UserId = s.UserId,
+                CarConnected = s.CarConnected,
+                CarDisconnected = s.CarDisconnected,
+                KiloWattHours = s.KiloWattHours,
+                ActualDurationSeconds = s.SessionEnergyDetails?.ActualDuration
+            }).ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching charging sessions for charger {ChargerId}", chargerId);
+            return Array.Empty<ChargingSession>();
+        }
+    }
+
+    private async Task EnsureAuthenticatedAsync(CancellationToken cancellationToken)
+    {
+        if (!IsAuthenticated)
+        {
+            var refreshed = await RefreshTokenAsync(cancellationToken);
+            if (!refreshed)
+            {
+                throw new InvalidOperationException("Not authenticated with Easee API. Please authenticate first.");
+            }
+        }
+    }
+
+    private void AddAuthorizationHeader(HttpRequestMessage request)
+    {
+        string? accessToken;
+        lock (_lock)
+        {
+            accessToken = _tokenData?.AccessToken;
+        }
+
+        if (accessToken != null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         }
     }
 }

@@ -1,3 +1,5 @@
+using TgHomeBot.Charging.Contract.Models;
+
 namespace TgHomeBot.Charging.Contract;
 
 /// <summary>
@@ -26,4 +28,21 @@ public interface IChargingConnector
     /// </summary>
     /// <returns>True if authenticated, false otherwise</returns>
     bool IsAuthenticated { get; }
+
+    /// <summary>
+    /// Gets all charger IDs available to the authenticated user
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of charger IDs</returns>
+    Task<IReadOnlyList<string>> GetChargerIdsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets charging sessions for a specific charger within a date range
+    /// </summary>
+    /// <param name="chargerId">ID of the charger</param>
+    /// <param name="from">Start date</param>
+    /// <param name="to">End date</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of charging sessions</returns>
+    Task<IReadOnlyList<ChargingSession>> GetChargingSessionsAsync(string chargerId, DateTime from, DateTime to, CancellationToken cancellationToken = default);
 }
