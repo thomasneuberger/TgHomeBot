@@ -1,0 +1,72 @@
+@model TgHomeBot.Charging.Contract.Models.UserAlias
+
+@{
+    ViewData["Title"] = "Benutzer-Alias bearbeiten";
+}
+
+<h1>Benutzer-Alias bearbeiten</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            
+            <div class="mb-3">
+                <label asp-for="UserId" class="form-label">Benutzer-ID</label>
+                <input asp-for="UserId" class="form-control" readonly />
+                <input type="hidden" asp-for="UserId" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Alias" class="form-label">Alias (Anzeigename)</label>
+                <input asp-for="Alias" class="form-control" placeholder="z.B. Max Mustermann" />
+                <div class="form-text">
+                    Geben Sie einen benutzerfreundlichen Namen ein, der anstelle der Benutzer-ID angezeigt wird.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="tokenIdsInput" class="form-label">Token-IDs</label>
+                <input type="text" id="tokenIdsInput" name="tokenIdsInput" class="form-control" 
+                       value="@string.Join(", ", Model.TokenIds)" 
+                       placeholder="z.B. token1, token2, token3" />
+                <div class="form-text">
+                    Geben Sie eine kommagetrennte Liste von alphanumerischen Token-IDs ein. 
+                    Diese werden verwendet, um Ladevorgänge diesem Benutzer zuzuordnen, auch wenn eine andere Benutzer-ID verwendet wird.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <a asp-action="Index" class="btn btn-secondary">Abbrechen</a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Hilfe</h5>
+            </div>
+            <div class="card-body">
+                <h6>Alias</h6>
+                <p>Der Alias ist ein benutzerfreundlicher Name, der in Berichten anstelle der numerischen Benutzer-ID angezeigt wird.</p>
+                
+                <h6>Token-IDs</h6>
+                <p>Token-IDs ermöglichen es, mehrere Benutzer-IDs demselben Alias zuzuordnen. Dies ist nützlich, wenn:</p>
+                <ul>
+                    <li>Ein Benutzer mehrere Authentifizierungs-Tokens hat</li>
+                    <li>Ladevorgänge mit verschiedenen Tokens demselben Benutzer zugeordnet werden sollen</li>
+                </ul>
+                
+                <h6>Zuordnungsreihenfolge</h6>
+                <p>Bei der Anzeige von Ladevorgängen wird folgendermaßen nach einem Anzeigenamen gesucht:</p>
+                <ol>
+                    <li>Direkter Alias für die Benutzer-ID</li>
+                    <li>Alias eines Benutzers, dessen Token-IDs den authToken des Ladevorgangs enthalten</li>
+                    <li>Die Benutzer-ID selbst (wenn kein Alias gefunden wird)</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
