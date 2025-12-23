@@ -19,6 +19,7 @@ internal class EaseeConnector : IChargingConnector
     private readonly ILogger<EaseeConnector> _logger;
     private readonly HttpClient _httpClient;
     private readonly FileStorageOptions _fileStorageOptions;
+    private readonly IUserAliasService _userAliasService;
     private readonly string _tokenFilePath;
     private EaseeTokenData? _tokenData;
     private readonly object _lock = new();
@@ -27,11 +28,13 @@ internal class EaseeConnector : IChargingConnector
         ILogger<EaseeConnector> logger,
         IHttpClientFactory httpClientFactory,
         IOptions<EaseeOptions> easeeOptions,
-        IOptions<FileStorageOptions> fileStorageOptions)
+        IOptions<FileStorageOptions> fileStorageOptions,
+        IUserAliasService userAliasService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _httpClient = httpClientFactory?.CreateClient() ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _fileStorageOptions = fileStorageOptions?.Value ?? throw new ArgumentNullException(nameof(fileStorageOptions));
+        _userAliasService = userAliasService ?? throw new ArgumentNullException(nameof(userAliasService));
         
         var options = easeeOptions?.Value ?? throw new ArgumentNullException(nameof(easeeOptions));
         _httpClient.BaseAddress = new Uri(options.BaseUrl);
@@ -332,13 +335,25 @@ internal class EaseeConnector : IChargingConnector
             _logger.LogInformation("Successfully fetched {Count} charging sessions for charger {ChargerName}",
                 sessions.Count, chargerName);
 
-            var chargingSessions = sessions.Select(s => new ChargingSession
+            var chargingSessions = sessions.Select(s =>
             {
-                UserId = s.UserId.ToString(),
-                CarConnected = s.CarConnected,
-                CarDisconnected = s.CarDisconnected,
-                KiloWattHours = s.KiloWattHours,
-                ActualDurationSeconds = s.ActualDurationSeconds
+                var userId = s.UserId.ToString();
+                
+                // Track the user ID
+                _userAliasService.TrackUserId(userId);
+                
+                // Resolve the user name
+                var userName = _userAliasService.ResolveUserName(userId, s.AuthToken);
+                
+                return new ChargingSession
+                {
+                    UserId = userId,
+                    UserName = userName,
+                    CarConnected = s.CarConnected,
+                    CarDisconnected = s.CarDisconnected,
+                    KiloWattHours = s.KiloWattHours,
+                    ActualDurationSeconds = s.ActualDurationSeconds
+                };
             }).ToList();
 
             return ChargingResult<IReadOnlyList<ChargingSession>>.Ok(chargingSessions);

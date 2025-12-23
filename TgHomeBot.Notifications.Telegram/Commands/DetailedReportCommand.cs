@@ -44,27 +44,27 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider) : IComman
             return;
         }
 
-        // Order by user id and then by car connection timestamp
+        // Order by user name and then by car connection timestamp
         var orderedSessions = sessions
-            .OrderBy(s => s.UserId)
+            .OrderBy(s => s.UserName)
             .ThenBy(s => s.CarConnected)
             .ToList();
 
         var reportLines = new List<string> { "📋 Detaillierter Ladebericht (letzte 2 Monate):" };
 
-        string? currentUserId = null;
+        string? currentUserName = null;
 
         foreach (var session in orderedSessions)
         {
             // Add user header if it's a new user
-            if (currentUserId != session.UserId)
+            if (currentUserName != session.UserName)
             {
-                if (currentUserId != null)
+                if (currentUserName != null)
                 {
                     reportLines.Add(""); // Empty line between users
                 }
-                currentUserId = session.UserId;
-                reportLines.Add($"👤 Benutzer: {session.UserId}");
+                currentUserName = session.UserName;
+                reportLines.Add($"👤 Benutzer: {session.UserName}");
             }
 
             var connectedTime = session.CarConnected.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);

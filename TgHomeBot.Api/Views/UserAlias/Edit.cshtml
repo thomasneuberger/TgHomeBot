@@ -1,0 +1,293 @@
+@model TgHomeBot.Charging.Contract.Models.UserAlias
+
+@{
+    ViewData["Title"] = "Benutzer-Alias bearbeiten";
+}
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .form-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        input[type="text"]:read-only {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        .form-text {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .help-card {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 20px;
+        }
+        .help-card h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .help-card h4 {
+            color: #495057;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        .help-card p {
+            color: #6c757d;
+            font-size: 14px;
+            margin: 0 0 10px 0;
+            line-height: 1.5;
+        }
+        .help-card ul, .help-card ol {
+            color: #6c757d;
+            font-size: 14px;
+            margin: 5px 0 10px 20px;
+            line-height: 1.5;
+        }
+        .help-card li {
+            margin-bottom: 5px;
+        }
+        .token-list {
+            margin-bottom: 10px;
+        }
+        .token-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 10px;
+        }
+        .token-item input {
+            flex: 1;
+        }
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .empty-message {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 14px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        @@media (max-width: 768px) {
+            .form-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Benutzer-Alias bearbeiten</h1>
+
+        <div class="form-container">
+            <div class="form-section">
+                <form asp-action="Edit" method="post" id="aliasForm">
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="form-group">
+                        <label asp-for="UserId">Benutzer-ID</label>
+                        <input asp-for="UserId" type="text" readonly />
+                        <input type="hidden" asp-for="UserId" />
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Alias">Alias (Anzeigename)</label>
+                        <input asp-for="Alias" type="text" placeholder="z.B. Max Mustermann" />
+                        <div class="form-text">
+                            Geben Sie einen benutzerfreundlichen Namen ein, der anstelle der Benutzer-ID angezeigt wird.
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Token-IDs</label>
+                        <div id="tokenList" class="token-list">
+                            @if (Model.TokenIds.Any())
+                            {
+                                foreach (var tokenId in Model.TokenIds)
+                                {
+                                    <div class="token-item">
+                                        <input type="text" name="TokenIds" value="@tokenId" placeholder="Token-ID eingeben" />
+                                        <button type="button" class="btn btn-danger btn-small" onclick="removeToken(this)">Entfernen</button>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="empty-message" id="emptyMessage">Keine Token-IDs vorhanden. Klicken Sie auf "Token-ID hinzufügen", um eine neue hinzuzufügen.</div>
+                            }
+                        </div>
+                        <button type="button" class="btn btn-success btn-small" onclick="addToken()">Token-ID hinzufügen</button>
+                        <div class="form-text">
+                            Token-IDs werden verwendet, um Ladevorgänge diesem Benutzer zuzuordnen, auch wenn eine andere Benutzer-ID verwendet wird.
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Speichern</button>
+                        <a asp-action="Index" class="btn btn-secondary">Abbrechen</a>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="help-section">
+                <div class="help-card">
+                    <h3>Hilfe</h3>
+                    
+                    <h4>Alias</h4>
+                    <p>Der Alias ist ein benutzerfreundlicher Name, der in Berichten anstelle der numerischen Benutzer-ID angezeigt wird.</p>
+                    
+                    <h4>Token-IDs</h4>
+                    <p>Token-IDs ermöglichen es, mehrere Benutzer-IDs demselben Alias zuzuordnen. Dies ist nützlich, wenn:</p>
+                    <ul>
+                        <li>Ein Benutzer mehrere Authentifizierungs-Tokens hat</li>
+                        <li>Ladevorgänge mit verschiedenen Tokens demselben Benutzer zugeordnet werden sollen</li>
+                    </ul>
+                    
+                    <h4>Zuordnungsreihenfolge</h4>
+                    <p>Bei der Anzeige von Ladevorgängen wird folgendermaßen nach einem Anzeigenamen gesucht:</p>
+                    <ol>
+                        <li>Direkter Alias für die Benutzer-ID</li>
+                        <li>Alias eines Benutzers, dessen Token-IDs den authToken des Ladevorgangs enthalten</li>
+                        <li>Die Benutzer-ID selbst (wenn kein Alias gefunden wird)</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function addToken() {
+            const tokenList = document.getElementById('tokenList');
+            const emptyMessage = document.getElementById('emptyMessage');
+            
+            // Remove empty message if it exists
+            if (emptyMessage) {
+                emptyMessage.remove();
+            }
+            
+            // Create new token item
+            const tokenItem = document.createElement('div');
+            tokenItem.className = 'token-item';
+            tokenItem.innerHTML = `
+                <input type="text" name="TokenIds" value="" placeholder="Token-ID eingeben" />
+                <button type="button" class="btn btn-danger btn-small" onclick="removeToken(this)">Entfernen</button>
+            `;
+            
+            tokenList.appendChild(tokenItem);
+            
+            // Focus on the new input
+            tokenItem.querySelector('input').focus();
+        }
+        
+        function removeToken(button) {
+            const tokenItem = button.parentElement;
+            const tokenList = document.getElementById('tokenList');
+            
+            tokenItem.remove();
+            
+            // Show empty message if no tokens left
+            if (tokenList.children.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'empty-message';
+                emptyMessage.id = 'emptyMessage';
+                emptyMessage.textContent = 'Keine Token-IDs vorhanden. Klicken Sie auf "Token-ID hinzufügen", um eine neue hinzuzufügen.';
+                tokenList.appendChild(emptyMessage);
+            }
+        }
+    </script>
+</body>
+</html>

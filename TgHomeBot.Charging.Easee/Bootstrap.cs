@@ -15,6 +15,7 @@ public static class Bootstrap
         services.AddOptions<EaseeOptions>().Configure(options => configuration.GetSection("Easee").Bind(options));
 
         services.AddSingleton<IChargingConnector, EaseeConnector>();
+        services.AddSingleton<IUserAliasService, UserAliasService>();
 
         services.AddTransient<IRequestHandler<GetChargingSessionsRequest, ChargingResult<IReadOnlyList<ChargingSession>>>, GetChargingSessionsRequestHandler>();
 

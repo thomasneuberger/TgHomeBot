@@ -44,15 +44,15 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider) : ICommand
 
         // Group by user and month, then sum the energy
         var monthlyReport = sessions
-            .GroupBy(s => new { s.UserId, Year = s.CarConnected.Year, Month = s.CarConnected.Month })
+            .GroupBy(s => new { s.UserName, Year = s.CarConnected.Year, Month = s.CarConnected.Month })
             .Select(g => new
             {
-                g.Key.UserId,
+                g.Key.UserName,
                 g.Key.Year,
                 g.Key.Month,
                 TotalKwh = g.Sum(s => s.KiloWattHours)
             })
-            .OrderBy(x => x.UserId)
+            .OrderBy(x => x.UserName)
             .ThenBy(x => x.Year)
             .ThenBy(x => x.Month)
             .ToList();
@@ -62,7 +62,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider) : ICommand
         foreach (var entry in monthlyReport)
         {
             var monthName = new DateTime(entry.Year, entry.Month, 1).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("de-DE"));
-            reportLines.Add($"👤 {entry.UserId} - {monthName}: {entry.TotalKwh:F2} kWh");
+            reportLines.Add($"👤 {entry.UserName} - {monthName}: {entry.TotalKwh:F2} kWh");
         }
 
         var report = string.Join('\n', reportLines);

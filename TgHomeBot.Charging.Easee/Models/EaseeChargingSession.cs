@@ -22,6 +22,9 @@ internal class EaseeChargingSession
     [JsonPropertyName("authUser")]
     public int UserId { get; set; } = 0;
 
+    [JsonPropertyName("authToken")]
+    public string? AuthToken { get; set; }
+
     [JsonPropertyName("actualDurationSeconds")]
     public int? ActualDurationSeconds { get; set; }
 }
