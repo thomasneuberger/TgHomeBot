@@ -19,26 +19,39 @@ internal class TelegramConnector(
     private readonly TelegramBotClient _botClient = new(options.Value.Token);
 	private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+	private const int MaxRetries = 5;
+	private const int MaxRetryDelaySeconds = 30;
+
     private string? _botName;
+	private bool _isConnected;
 
     public async Task Connect()
 	{
 		await registeredChatService.LoadRegisteredChats();
 
 		// Start connection in background to avoid blocking application startup
-		_ = Task.Run(async () => await ConnectAsync(_cancellationTokenSource.Token));
+		_ = Task.Run(async () =>
+		{
+			try
+			{
+				await ConnectAsync(_cancellationTokenSource.Token);
+			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Unhandled exception in Telegram connection task: {Exception}", ex.Message);
+			}
+		});
 	}
 
 	private async Task ConnectAsync(CancellationToken cancellationToken)
 	{
 		var retryCount = 0;
-		const int maxRetries = 5;
 
 		while (!cancellationToken.IsCancellationRequested)
 		{
 			try
 			{
-				logger.LogInformation("Attempting to connect to Telegram bot (attempt {Attempt}/{MaxRetries})...", retryCount + 1, maxRetries);
+				logger.LogInformation("Attempting to connect to Telegram bot (attempt {Attempt}/{MaxRetries})...", retryCount + 1, MaxRetries);
 
 				var bot = await _botClient.GetMeAsync(cancellationToken);
 				_botName = bot.Username;
@@ -64,6 +77,8 @@ internal class TelegramConnector(
 
 				_botClient.StartReceiving(ReceiveUpdate, HandleError, cancellationToken: cancellationToken);
 
+				_isConnected = true;
+
 				// Connection successful, exit retry loop
 				return;
 			}
@@ -75,17 +90,17 @@ internal class TelegramConnector(
 			catch (Exception ex)
 			{
 				retryCount++;
-				logger.LogError(ex, "Error connecting to Telegram bot (attempt {Attempt}/{MaxRetries}): {Exception}", retryCount, maxRetries, ex.Message);
+				logger.LogError(ex, "Error connecting to Telegram bot (attempt {Attempt}/{MaxRetries}): {Exception}", retryCount, MaxRetries, ex.Message);
 
-				if (retryCount >= maxRetries)
+				if (retryCount >= MaxRetries)
 				{
-					logger.LogError("Failed to connect to Telegram bot after {MaxRetries} attempts. Telegram functionality will be unavailable.", maxRetries);
+					logger.LogError("Failed to connect to Telegram bot after {MaxRetries} attempts. Telegram functionality will be unavailable.", MaxRetries);
 					return;
 				}
 
 				try
 				{
-					var delay = TimeSpan.FromSeconds(Math.Min(30, Math.Pow(2, retryCount)));
+					var delay = TimeSpan.FromSeconds(Math.Min(MaxRetryDelaySeconds, Math.Pow(2, retryCount)));
 					logger.LogInformation("Retrying Telegram connection in {Delay} seconds...", delay.TotalSeconds);
 					await Task.Delay(delay, cancellationToken);
 				}
@@ -152,7 +167,7 @@ internal class TelegramConnector(
 
 	public async Task SendAsync(string message)
 	{
-		if (string.IsNullOrWhiteSpace(_botName))
+		if (!_isConnected)
 		{
 			logger.LogWarning("Cannot send message - Telegram bot is not connected yet.");
 			return;
