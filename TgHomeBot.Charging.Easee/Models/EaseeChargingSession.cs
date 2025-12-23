@@ -22,15 +22,6 @@ internal class EaseeChargingSession
     [JsonPropertyName("authUser")]
     public int UserId { get; set; } = 0;
 
-    [JsonPropertyName("sessionEnergyDetails")]
-    public EaseeSessionEnergyDetails? SessionEnergyDetails { get; set; }
-}
-
-/// <summary>
-/// Energy details for a charging session
-/// </summary>
-internal class EaseeSessionEnergyDetails
-{
-    [JsonPropertyName("actualDuration")]
-    public int? ActualDuration { get; set; }
+    [JsonPropertyName("actualDurationSeconds")]
+    public int? ActualDurationSeconds { get; set; }
 }

@@ -338,7 +338,7 @@ internal class EaseeConnector : IChargingConnector
                 CarConnected = s.CarConnected,
                 CarDisconnected = s.CarDisconnected,
                 KiloWattHours = s.KiloWattHours,
-                ActualDurationSeconds = s.SessionEnergyDetails?.ActualDuration
+                ActualDurationSeconds = s.ActualDurationSeconds
             }).ToList();
 
             return ChargingResult<IReadOnlyList<ChargingSession>>.Ok(chargingSessions);
