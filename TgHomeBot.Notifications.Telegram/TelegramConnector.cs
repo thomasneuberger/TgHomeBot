@@ -19,29 +19,98 @@ internal class TelegramConnector(
     private readonly TelegramBotClient _botClient = new(options.Value.Token);
 	private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+	private const int MaxRetries = 5;
+	private const int MaxRetryDelaySeconds = 30;
+
     private string? _botName;
+	private volatile bool _isConnected;
 
     public async Task Connect()
 	{
 		await registeredChatService.LoadRegisteredChats();
 
-        var botCommands = commands
-	        .Where(c => !c.HideFromMenu)
-            .Select(c => new BotCommand { Command = c.Name, Description = c.Description })
-            .ToList();
+		// Start connection in background to avoid blocking application startup
+		_ = Task.Run(async () =>
+		{
+			try
+			{
+				await ConnectAsync(_cancellationTokenSource.Token);
+			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Unhandled exception in Telegram connection task: {Exception}", ex.Message);
+			}
+		});
+	}
 
-        foreach (var chat in registeredChatService.RegisteredChats)
-        {
-            await _botClient.SetMyCommandsAsync(botCommands, BotCommandScope.Chat(new ChatId(chat.ChatId)), cancellationToken: _cancellationTokenSource.Token);
-        }
+	private async Task ConnectAsync(CancellationToken cancellationToken)
+	{
+		var retryCount = 0;
 
-		_botClient.StartReceiving(ReceiveUpdate, HandleError, cancellationToken: _cancellationTokenSource.Token);
+		while (!cancellationToken.IsCancellationRequested)
+		{
+			try
+			{
+				logger.LogInformation("Attempting to connect to Telegram bot (attempt {Attempt}/{MaxRetries})...", retryCount + 1, MaxRetries);
 
-		var bot = await _botClient.GetMeAsync();
+				var bot = await _botClient.GetMeAsync(cancellationToken);
+				_botName = bot.Username;
 
-        _botName = bot.Username;
+				logger.LogInformation("Telegram bot connected: {Bot}", bot);
 
-		logger.LogInformation("Telegram bot connected: {Bot}", bot);
+				var botCommands = commands
+					.Where(c => !c.HideFromMenu)
+					.Select(c => new BotCommand { Command = c.Name, Description = c.Description })
+					.ToList();
+
+				foreach (var chat in registeredChatService.RegisteredChats)
+				{
+					try
+					{
+						await _botClient.SetMyCommandsAsync(botCommands, BotCommandScope.Chat(new ChatId(chat.ChatId)), cancellationToken: cancellationToken);
+					}
+					catch (Exception ex)
+					{
+						logger.LogWarning(ex, "Failed to set commands for chat {ChatId}", chat.ChatId);
+					}
+				}
+
+				_botClient.StartReceiving(ReceiveUpdate, HandleError, cancellationToken: cancellationToken);
+
+				_isConnected = true;
+
+				// Connection successful, exit retry loop
+				return;
+			}
+			catch (OperationCanceledException)
+			{
+				logger.LogInformation("Telegram bot connection cancelled during shutdown.");
+				return;
+			}
+			catch (Exception ex)
+			{
+				retryCount++;
+				logger.LogError(ex, "Error connecting to Telegram bot (attempt {Attempt}/{MaxRetries}): {Exception}", retryCount, MaxRetries, ex.Message);
+
+				if (retryCount >= MaxRetries)
+				{
+					logger.LogError("Failed to connect to Telegram bot after {MaxRetries} attempts. Telegram functionality will be unavailable.", MaxRetries);
+					return;
+				}
+
+				try
+				{
+					var delaySeconds = Math.Min(MaxRetryDelaySeconds, 1 << retryCount);
+					logger.LogInformation("Retrying Telegram connection in {Delay} seconds...", delaySeconds);
+					await Task.Delay(TimeSpan.FromSeconds(delaySeconds), cancellationToken);
+				}
+				catch (OperationCanceledException)
+				{
+					logger.LogInformation("Telegram bot connection retry cancelled during shutdown.");
+					return;
+				}
+			}
+		}
 	}
 
 	public async Task DisconnectAsync()
@@ -98,11 +167,23 @@ internal class TelegramConnector(
 
 	public async Task SendAsync(string message)
 	{
+		if (!_isConnected)
+		{
+			logger.LogWarning("Cannot send message - Telegram bot is not connected yet.");
+			return;
+		}
+
 		foreach (var registeredChat in registeredChatService.RegisteredChats)
 		{
-			await _botClient.SendTextMessageAsync(registeredChat.ChatId, message, parseMode: ParseMode.Html);
-
-			logger.LogInformation("Message sent to chat {ChatId} with user {User}: {Message}", registeredChat.ChatId, registeredChat.Username, message);
+			try
+			{
+				await _botClient.SendTextMessageAsync(registeredChat.ChatId, message, parseMode: ParseMode.Html);
+				logger.LogInformation("Message sent to chat {ChatId} with user {User}: {Message}", registeredChat.ChatId, registeredChat.Username, message);
+			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Failed to send message to chat {ChatId}: {Exception}", registeredChat.ChatId, ex.Message);
+			}
 		}
 	}
 }
