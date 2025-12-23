@@ -6,13 +6,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using TgHomeBot.Common.Contract;
+using TgHomeBot.Scheduling.Contract;
+using TgHomeBot.Scheduling.Contract.Models;
 
 namespace TgHomeBot.Scheduling;
 
 /// <summary>
 /// Hosted service that manages scheduled tasks
 /// </summary>
-public class SchedulerService : IHostedService, IDisposable
+public class SchedulerService : ISchedulerService, IHostedService, IDisposable
 {
     private readonly ILogger<SchedulerService> _logger;
     private readonly IServiceProvider _serviceProvider;
@@ -140,8 +142,19 @@ public class SchedulerService : IHostedService, IDisposable
     {
         // Try to find the task type in the current assembly
         var assembly = typeof(SchedulerService).Assembly;
+        
+        // Try exact match first
         var fullTypeName = $"TgHomeBot.Scheduling.Tasks.{taskType}";
         var type = assembly.GetType(fullTypeName);
+        
+        // If not found, try case-insensitive search
+        if (type == null)
+        {
+            type = assembly.GetTypes()
+                .FirstOrDefault(t => 
+                    t.Namespace == "TgHomeBot.Scheduling.Tasks" && 
+                    t.Name.Equals(taskType, StringComparison.OrdinalIgnoreCase));
+        }
         
         if (type == null)
         {
@@ -168,6 +181,88 @@ public class SchedulerService : IHostedService, IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets information about all scheduled tasks including disabled ones
+    /// </summary>
+    /// <returns>Collection of task information</returns>
+    public IEnumerable<ScheduledTaskInfo> GetScheduledTasks()
+    {
+        var configurations = LoadTaskConfigurations();
+        var result = new List<ScheduledTaskInfo>();
+
+        foreach (var config in configurations)
+        {
+            DateTime? nextExecution = null;
+            string taskName = config.TaskType;
+
+            // Find the running task runner if it exists
+            var runner = _taskRunners.FirstOrDefault(r => r.TaskType == config.TaskType);
+            if (runner != null)
+            {
+                taskName = runner.TaskName;
+                nextExecution = runner.GetNextExecutionTime();
+            }
+            else if (config.Enabled)
+            {
+                // If enabled but not in runners, try to get task name from task creation
+                var task = CreateTask(config.TaskType);
+                if (task != null)
+                {
+                    taskName = task.TaskName;
+                    try
+                    {
+                        var cronExpression = CronExpression.Parse(config.CronExpression, CronFormat.Standard);
+                        nextExecution = cronExpression.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Utc);
+                    }
+                    catch (CronFormatException ex)
+                    {
+                        _logger.LogWarning(ex, "Invalid cron expression for task {TaskType}: {CronExpression}", 
+                            config.TaskType, config.CronExpression);
+                    }
+                }
+            }
+
+            result.Add(new ScheduledTaskInfo
+            {
+                TaskType = config.TaskType,
+                TaskName = taskName,
+                CronExpression = config.CronExpression,
+                Enabled = config.Enabled,
+                NextExecutionTime = nextExecution
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Executes a task immediately by its type name
+    /// </summary>
+    /// <param name="taskType">The type name of the task</param>
+    /// <returns>True if the task was executed successfully, false otherwise</returns>
+    public async Task<bool> RunTaskNowAsync(string taskType)
+    {
+        try
+        {
+            var task = CreateTask(taskType);
+            if (task == null)
+            {
+                _logger.LogWarning("Task type {TaskType} not found or could not be created", taskType);
+                return false;
+            }
+
+            _logger.LogInformation("Running task {TaskName} ({TaskType}) on demand", task.TaskName, taskType);
+            await task.ExecuteAsync(CancellationToken.None);
+            _logger.LogInformation("Task {TaskName} ({TaskType}) completed successfully", task.TaskName, taskType);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error running task {TaskType} on demand", taskType);
+            return false;
+        }
+    }
+
     public void Dispose()
     {
         _stoppingCts.Cancel();
@@ -185,12 +280,20 @@ public class SchedulerService : IHostedService, IDisposable
         private readonly CronExpression _cronExpression;
         private Task? _runningTask;
 
+        public string TaskType => _configuration.TaskType;
+        public string TaskName => _task.TaskName;
+
         public ScheduledTaskRunner(IScheduledTask task, TaskConfiguration configuration, ILogger logger)
         {
             _task = task ?? throw new ArgumentNullException(nameof(task));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _cronExpression = CronExpression.Parse(configuration.CronExpression, CronFormat.Standard);
+        }
+
+        public DateTime? GetNextExecutionTime()
+        {
+            return _cronExpression.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Utc);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

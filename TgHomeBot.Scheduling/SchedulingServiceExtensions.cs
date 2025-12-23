@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TgHomeBot.Scheduling.Contract;
 
 namespace TgHomeBot.Scheduling;
 
@@ -16,7 +17,9 @@ public static class SchedulingServiceExtensions
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddScheduling(this IServiceCollection services)
     {
-        services.AddSingleton<IHostedService, SchedulerService>();
+        services.AddSingleton<SchedulerService>();
+        services.AddSingleton<ISchedulerService>(sp => sp.GetRequiredService<SchedulerService>());
+        services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<SchedulerService>());
 
         return services;
     }

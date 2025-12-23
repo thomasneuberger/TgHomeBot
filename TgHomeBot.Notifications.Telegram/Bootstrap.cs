@@ -21,6 +21,8 @@ public static class Bootstrap
         services.AddSingleton<ICommand, EndCommand>();
         services.AddSingleton<ICommand, MonitoredDevicesCommand>();
         services.AddSingleton<ICommand, DevicesCommand>();
+        services.AddSingleton<ICommand, ScheduledTasksCommand>();
+        services.AddSingleton<ICommand, RunTaskCommand>();
         services.AddSingleton<ICommand, HelpCommand>();
         services.AddSingleton<ICommand, LogCommand>();
         services.AddSingleton<ICommand, LogFileCommand>();
