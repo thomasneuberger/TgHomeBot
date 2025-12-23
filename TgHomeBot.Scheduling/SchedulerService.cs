@@ -142,8 +142,19 @@ public class SchedulerService : ISchedulerService, IHostedService, IDisposable
     {
         // Try to find the task type in the current assembly
         var assembly = typeof(SchedulerService).Assembly;
+        
+        // Try exact match first
         var fullTypeName = $"TgHomeBot.Scheduling.Tasks.{taskType}";
         var type = assembly.GetType(fullTypeName);
+        
+        // If not found, try case-insensitive search
+        if (type == null)
+        {
+            type = assembly.GetTypes()
+                .FirstOrDefault(t => 
+                    t.Namespace == "TgHomeBot.Scheduling.Tasks" && 
+                    t.Name.Equals(taskType, StringComparison.OrdinalIgnoreCase));
+        }
         
         if (type == null)
         {

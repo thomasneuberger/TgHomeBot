@@ -30,11 +30,12 @@ internal class RunTaskCommand(IServiceProvider serviceProvider) : ICommand
                 return;
             }
 
-            var taskList = string.Join("\n", tasks.Select(t => $"• <code>{t.TaskType}</code> - {t.TaskName}"));
+            var taskList = string.Join("\n", tasks.Select(t => 
+                $"• {Name}_{t.TaskType} - {t.TaskName}"));
             var helpMessage = "<b>Verwendung:</b>\n" +
                             $"<code>{Name}_TaskType</code>\n\n" +
                             "<b>Verfügbare Aufgaben:</b>\n" +
-                            taskList;
+                            $"Klicken Sie auf einen Befehl um ihn auszuführen:\n{taskList}";
 
             await client.SendTextMessageAsync(
                 new ChatId(message.Chat.Id),
