@@ -8,7 +8,7 @@ namespace TgHomeBot.Charging.Easee.Models;
 internal class EaseeCharger
 {
     [JsonPropertyName("id")]
-    public required int Id { get; set; }
+    public required string Id { get; set; }
 
     [JsonPropertyName("name")]
     public required string Name { get; set; }

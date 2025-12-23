@@ -268,7 +268,7 @@ internal class EaseeConnector : IChargingConnector
                 .SelectMany(c => c.Chargers)
                 .Select(ch => new ChargerInfo
                 {
-                    Id = ch.Id.ToString(),
+                    Id = ch.Id,
                     Name = ch.Name
                 })
                 .ToList();
