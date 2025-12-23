@@ -117,6 +117,8 @@ internal class EaseeConnector : IChargingConnector
         {
             _logger.LogInformation("Refreshing Easee access token");
 
+            // According to Easee API documentation, the accessToken field should be empty string
+            // when refreshing tokens. Only the refreshToken is needed.
             var request = new
             {
                 accessToken = string.Empty,
@@ -216,7 +218,11 @@ internal class EaseeConnector : IChargingConnector
                 WriteIndented = true
             });
             
-            File.WriteAllText(_tokenFilePath, json);
+            // Write to temporary file first, then move atomically
+            var tempFilePath = $"{_tokenFilePath}.tmp";
+            File.WriteAllText(tempFilePath, json);
+            File.Move(tempFilePath, _tokenFilePath, overwrite: true);
+            
             _logger.LogInformation("Saved token to file {Path}", _tokenFilePath);
         }
         catch (Exception ex)
