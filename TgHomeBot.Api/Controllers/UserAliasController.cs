@@ -50,7 +50,7 @@ public class UserAliasController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Edit(UserAlias model, string tokenIdsInput)
+    public IActionResult Edit(UserAlias model)
     {
         _logger.LogInformation("Saving user alias for user {UserId}", model.UserId);
 
@@ -60,19 +60,12 @@ public class UserAliasController : Controller
             return View(model);
         }
 
-        // Parse token IDs from comma-separated input
-        if (!string.IsNullOrWhiteSpace(tokenIdsInput))
-        {
-            model.TokenIds = tokenIdsInput
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(t => t.Trim())
-                .Where(t => !string.IsNullOrWhiteSpace(t))
-                .ToList();
-        }
-        else
-        {
-            model.TokenIds = [];
-        }
+        // Filter out empty token IDs
+        model.TokenIds = model.TokenIds
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim())
+            .Distinct()
+            .ToList();
 
         _userAliasService.SaveAlias(model);
 
