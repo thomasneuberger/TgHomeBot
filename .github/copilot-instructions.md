@@ -174,6 +174,18 @@ public static class Bootstrap
    - Return `ActionResult<T>` for type-safe responses
    - Use `[FromServices]` for additional dependencies
 
+6. **Feature Flags for Telegram Notifications**
+   - **All new features that send messages via the Telegram bot must include a corresponding feature flag** in the `RegisteredChat` model
+   - Add a boolean property to `RegisteredChat` with a default value of `true`
+   - Create a `NotificationType` enum value for the new feature
+   - Update `IRegisteredChatService` with a toggle method for the new flag
+   - Implement the toggle method in `RegisteredChatService`
+   - Create a Telegram command to toggle the flag (naming pattern: `/toggle<featurename>`)
+   - Create an API endpoint to toggle the flag at `POST /api/notification/chat/{chatId}/flags/<featurename>/toggle`
+   - When sending notifications, use `NotifyRequest` with the appropriate `NotificationType`
+   - The `TelegramConnector.ShouldSendNotification` method will automatically filter based on feature flags
+   - Manual triggers (commands, API endpoints) should bypass flag checks by using `NotificationType.General`
+
 ## Development Workflow
 
 1. **Build**: `dotnet build TgHomeBot.sln`

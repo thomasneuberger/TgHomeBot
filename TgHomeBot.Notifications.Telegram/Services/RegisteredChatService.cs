@@ -46,6 +46,11 @@ internal class RegisteredChatService : IRegisteredChatService
 
     public async Task<bool> RegisterChat(long userId, string username, long chatId)
     {
+        return await RegisterChat(userId, username, chatId, null);
+    }
+
+    public async Task<bool> RegisterChat(long userId, string username, long chatId, string? chatName)
+    {
         var existingChat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
         if (existingChat is not null)
         {
@@ -56,12 +61,13 @@ internal class RegisteredChatService : IRegisteredChatService
         {
             Id = userId,
             Username = username,
-            ChatId = chatId
+            ChatId = chatId,
+            ChatName = chatName
         });
 
         await SaveRegisteredChats();
 
-        _logger.LogInformation("Registered chat {ChatId} with user {User}", chatId, username);
+        _logger.LogInformation("Registered chat {ChatId} with user {User} and chat name {ChatName}", chatId, username, chatName);
 
         return true;
     }
@@ -78,6 +84,58 @@ internal class RegisteredChatService : IRegisteredChatService
         await SaveRegisteredChats();
         return true;
 
+    }
+
+    public async Task<bool> ToggleEurojackpotAsync(long chatId)
+    {
+        var chat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+        if (chat is null)
+        {
+            return false;
+        }
+
+        chat.EurojackpotEnabled = !chat.EurojackpotEnabled;
+        await SaveRegisteredChats();
+        _logger.LogInformation("Toggled Eurojackpot flag for chat {ChatId} to {Enabled}", chatId, chat.EurojackpotEnabled);
+        return true;
+    }
+
+    public async Task<bool> ToggleMonthlyChargingReportAsync(long chatId)
+    {
+        var chat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+        if (chat is null)
+        {
+            return false;
+        }
+
+        chat.MonthlyChargingReportEnabled = !chat.MonthlyChargingReportEnabled;
+        await SaveRegisteredChats();
+        _logger.LogInformation("Toggled Monthly Charging Report flag for chat {ChatId} to {Enabled}", chatId, chat.MonthlyChargingReportEnabled);
+        return true;
+    }
+
+    public async Task<bool> ToggleDeviceNotificationsAsync(long chatId)
+    {
+        var chat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+        if (chat is null)
+        {
+            return false;
+        }
+
+        chat.DeviceNotificationsEnabled = !chat.DeviceNotificationsEnabled;
+        await SaveRegisteredChats();
+        _logger.LogInformation("Toggled Device Notifications flag for chat {ChatId} to {Enabled}", chatId, chat.DeviceNotificationsEnabled);
+        return true;
+    }
+
+    public RegisteredChat? GetRegisteredChat(long chatId)
+    {
+        return _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await SaveRegisteredChats();
     }
 
     private async Task SaveRegisteredChats()

@@ -1,10 +1,10 @@
-using System.Globalization;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgHomeBot.Charging.Contract.Requests;
+using TgHomeBot.Charging.Contract.Services;
 using TgHomeBot.Common.Contract;
 
 namespace TgHomeBot.Notifications.Telegram.Commands;
@@ -21,6 +21,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
     {
         using var scope = serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        var formatter = scope.ServiceProvider.GetRequiredService<IMonthlyReportFormatter>();
 
         // Get sessions for the last two months
         var to = DateTime.UtcNow.Date;
@@ -46,39 +47,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
         }
 
         var sessions = result.Data!;
-        
-        if (sessions.Count == 0)
-        {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
-                "Keine Ladevorgänge in den letzten zwei Monaten gefunden.",
-                cancellationToken: cancellationToken);
-            return;
-        }
-
-        // Group by user and month, then sum the energy
-        var monthlyReport = sessions
-            .GroupBy(s => new { s.UserName, Year = s.CarConnected.Year, Month = s.CarConnected.Month })
-            .Select(g => new
-            {
-                g.Key.UserName,
-                g.Key.Year,
-                g.Key.Month,
-                TotalKwh = g.Sum(s => s.KiloWattHours)
-            })
-            .OrderBy(x => x.UserName)
-            .ThenBy(x => x.Year)
-            .ThenBy(x => x.Month)
-            .ToList();
-
-        var reportLines = new List<string> { "📊 Monatlicher Ladebericht (letzte 2 Monate):" };
-
-        foreach (var entry in monthlyReport)
-        {
-            var monthName = new DateTime(entry.Year, entry.Month, 1).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("de-DE"));
-            reportLines.Add($"👤 {entry.UserName} - {monthName}: {entry.TotalKwh:F2} kWh");
-        }
-
-        var report = string.Join('\n', reportLines);
+        var report = formatter.FormatMonthlyReport(sessions);
 
         await client.SendTextMessageAsync(new ChatId(message.Chat.Id), report, cancellationToken: cancellationToken);
     }

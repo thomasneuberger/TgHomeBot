@@ -2,7 +2,15 @@
 
 namespace TgHomeBot.Notifications.Contract.Requests;
 
-public class NotifyRequest(string message) : IRequest
+public class NotifyRequest : IRequest
 {
-    public string Message => message;
+    public string Message { get; }
+    
+    public NotificationType NotificationType { get; }
+
+    public NotifyRequest(string message, NotificationType notificationType = NotificationType.General)
+    {
+        Message = message;
+        NotificationType = notificationType;
+    }
 }
