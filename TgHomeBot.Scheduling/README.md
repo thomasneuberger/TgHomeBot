@@ -154,6 +154,24 @@ The task fetches the latest Eurojackpot results from the Lottoland API and sends
 - Last draw date, winning numbers, euro numbers, and jackpot amount
 - Next draw date and expected jackpot (when available)
 
+### MonthlyChargingReportTask
+
+A scheduled task that sends a monthly charging report to Telegram on the first day of every month at midnight:
+
+Configuration file (`MonthlyChargingReportTask.json`):
+```json
+{
+  "taskType": "MonthlyChargingReportTask",
+  "cronExpression": "0 0 1 * *",
+  "enabled": true
+}
+```
+
+The task generates a summary of EV charging sessions from the last two months, grouped by user and month. The report includes:
+- Total kWh charged per user per month
+- Formatted in German with month names
+- Sent to all registered Telegram chats (respects the MonthlyChargingReport feature flag)
+
 ## Integration
 
 To integrate the scheduler into your application:
