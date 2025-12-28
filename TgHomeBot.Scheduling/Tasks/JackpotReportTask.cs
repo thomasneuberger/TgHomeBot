@@ -121,7 +121,7 @@ public class JackpotReportTask : IScheduledTask
 
     private static string FormatJackpotAmount(long jackpot)
     {
-        return $"{jackpot:N0} €";
+        return jackpot.ToString("N0", CultureInfo.GetCultureInfo("de-DE")) + " €";
     }
 
     private class EurojackpotApiResponse
@@ -152,14 +152,5 @@ public class JackpotReportTask : IScheduledTask
     {
         [JsonPropertyName("full")]
         public string Full { get; set; } = string.Empty;
-
-        [JsonPropertyName("day")]
-        public string Day { get; set; } = string.Empty;
-
-        [JsonPropertyName("month")]
-        public string Month { get; set; } = string.Empty;
-
-        [JsonPropertyName("year")]
-        public string Year { get; set; } = string.Empty;
     }
 }
