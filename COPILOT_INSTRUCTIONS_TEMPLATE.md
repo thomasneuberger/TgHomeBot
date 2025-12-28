@@ -139,6 +139,7 @@ public static class Bootstrap
 
 - **Central Package Management**: All package versions defined in `Directory.Packages.props`
 - Use `<PackageReference>` without version attributes in project files
+- **MIT License Requirement**: Only use external packages with MIT license to ensure compliance and compatibility
 - Key dependencies:
   - **MediatR** - CQRS pattern
   - **Serilog.AspNetCore** - Structured logging
