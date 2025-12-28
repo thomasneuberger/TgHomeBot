@@ -100,7 +100,9 @@ public class MyCustomTask : IScheduledTask
 
 3. The task will automatically be discovered and scheduled when the application starts.
 
-## Example: HourlyLogTask
+## Example Tasks
+
+### HourlyLogTask
 
 The project includes a demonstration task `HourlyLogTask` that logs the current date and time every hour:
 
@@ -134,6 +136,21 @@ Configuration file (`HourlyLogTask.json`):
   "enabled": true
 }
 ```
+
+### JackpotReportTask
+
+A scheduled task that reports the current Eurojackpot lottery jackpot to Telegram every Tuesday and Friday at 10pm:
+
+Configuration file (`JackpotReportTask.json`):
+```json
+{
+  "taskType": "JackpotReportTask",
+  "cronExpression": "0 22 * * 2,5",
+  "enabled": true
+}
+```
+
+The task fetches the latest Eurojackpot results from a free public API and sends a formatted message to all registered Telegram chats, including the draw date, jackpot amount, winning numbers, and euro numbers.
 
 ## Integration
 
