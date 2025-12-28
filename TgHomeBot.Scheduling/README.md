@@ -150,7 +150,9 @@ Configuration file (`JackpotReportTask.json`):
 }
 ```
 
-The task fetches the latest Eurojackpot results from a free public API and sends a formatted message to all registered Telegram chats, including the draw date, jackpot amount, winning numbers, and euro numbers.
+The task fetches the latest Eurojackpot results from the Lottoland API and sends a formatted message to all registered Telegram chats, including:
+- Last draw date, winning numbers, euro numbers, and jackpot amount
+- Next draw date and expected jackpot (when available)
 
 ## Integration
 

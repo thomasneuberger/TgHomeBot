@@ -13,7 +13,7 @@ namespace TgHomeBot.Scheduling.Tasks;
 /// </summary>
 public class JackpotReportTask : IScheduledTask
 {
-    private const string EurojackpotApiUrl = "https://lottoapi.herokuapp.com/eurojackpot-results/1";
+    private const string EurojackpotApiUrl = "https://media.lottoland.com/api/drawings/euroJackpot";
     
     private readonly ILogger<JackpotReportTask> _logger;
     private readonly INotificationConnector _notificationConnector;
@@ -46,10 +46,10 @@ public class JackpotReportTask : IScheduledTask
                 return;
             }
 
-            List<EurojackpotResult>? results;
+            EurojackpotApiResponse? apiResponse;
             try
             {
-                results = await response.Content.ReadFromJsonAsync<List<EurojackpotResult>>(cancellationToken);
+                apiResponse = await response.Content.ReadFromJsonAsync<EurojackpotApiResponse>(cancellationToken);
             }
             catch (JsonException ex)
             {
@@ -57,14 +57,13 @@ public class JackpotReportTask : IScheduledTask
                 return;
             }
 
-            if (results == null || results.Count == 0)
+            if (apiResponse?.Last == null)
             {
-                _logger.LogWarning("No Eurojackpot results found");
+                _logger.LogWarning("No Eurojackpot results found in API response");
                 return;
             }
 
-            var latestResult = results[0];
-            var message = FormatJackpotMessage(latestResult);
+            var message = FormatJackpotMessage(apiResponse.Last, apiResponse.Next);
 
             await _notificationConnector.SendAsync(message);
             _logger.LogInformation("Successfully sent Eurojackpot jackpot report");
@@ -75,43 +74,69 @@ public class JackpotReportTask : IScheduledTask
         }
     }
 
-    private static string FormatJackpotMessage(EurojackpotResult result)
+    private static string FormatJackpotMessage(EurojackpotDraw lastDraw, EurojackpotDraw? nextDraw)
     {
         var message = $"🎰 <b>Eurojackpot Ziehung</b>\n\n";
-        message += $"📅 Datum: {result.Date}\n";
-        message += $"💰 Jackpot: {FormatJackpotAmount(result.Jackpot)}\n\n";
-        message += $"🔢 Gewinnzahlen: {string.Join(", ", result.Numbers)}\n";
-        message += $"⭐ Eurozahlen: {string.Join(", ", result.EuroNumbers)}\n\n";
-        message += "Viel Glück! 🍀";
+        
+        // Last draw information
+        message += $"📅 <b>Letzte Ziehung:</b> {FormatDate(lastDraw.Date)}\n";
+        message += $"🔢 Gewinnzahlen: {string.Join(", ", lastDraw.Numbers)}\n";
+        message += $"⭐ Eurozahlen: {string.Join(", ", lastDraw.EuroNumbers)}\n";
+        
+        if (lastDraw.Jackpot > 0)
+        {
+            message += $"💰 Jackpot: {FormatJackpotAmount(lastDraw.Jackpot)}\n";
+        }
+        
+        // Next draw information if available
+        if (nextDraw != null)
+        {
+            message += $"\n📅 <b>Nächste Ziehung:</b> {FormatDate(nextDraw.Date)}\n";
+            if (nextDraw.Jackpot > 0)
+            {
+                message += $"💰 Erwarteter Jackpot: {FormatJackpotAmount(nextDraw.Jackpot)}\n";
+            }
+        }
+        
+        message += "\nViel Glück! 🍀";
         
         return message;
     }
 
-    private static string FormatJackpotAmount(string jackpot)
+    private static string FormatDate(DrawDate? date)
     {
-        // The API returns jackpot as a string, format it nicely
-        if (string.IsNullOrEmpty(jackpot))
+        if (date == null || string.IsNullOrEmpty(date.Full))
         {
-            return "Nicht verfügbar";
+            return "Unbekannt";
         }
 
-        // Remove currency symbols and whitespace
-        var cleanedJackpot = jackpot.Replace("€", "").Trim();
-        
-        // Try to parse as a number - the API typically returns plain numbers
-        if (decimal.TryParse(cleanedJackpot, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
+        // Try to parse and format the date nicely
+        if (DateTime.TryParse(date.Full, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
         {
-            return $"{amount:N0} €";
+            return parsedDate.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("de-DE"));
         }
 
-        // If parsing fails, return the original value
-        return jackpot;
+        return date.Full;
     }
 
-    private class EurojackpotResult
+    private static string FormatJackpotAmount(long jackpot)
+    {
+        return $"{jackpot:N0} €";
+    }
+
+    private class EurojackpotApiResponse
+    {
+        [JsonPropertyName("last")]
+        public EurojackpotDraw? Last { get; set; }
+
+        [JsonPropertyName("next")]
+        public EurojackpotDraw? Next { get; set; }
+    }
+
+    private class EurojackpotDraw
     {
         [JsonPropertyName("date")]
-        public string Date { get; set; } = string.Empty;
+        public DrawDate? Date { get; set; }
 
         [JsonPropertyName("numbers")]
         public List<int> Numbers { get; set; } = new();
@@ -120,6 +145,21 @@ public class JackpotReportTask : IScheduledTask
         public List<int> EuroNumbers { get; set; } = new();
 
         [JsonPropertyName("jackpot")]
-        public string Jackpot { get; set; } = string.Empty;
+        public long Jackpot { get; set; }
+    }
+
+    private class DrawDate
+    {
+        [JsonPropertyName("full")]
+        public string Full { get; set; } = string.Empty;
+
+        [JsonPropertyName("day")]
+        public string Day { get; set; } = string.Empty;
+
+        [JsonPropertyName("month")]
+        public string Month { get; set; } = string.Empty;
+
+        [JsonPropertyName("year")]
+        public string Year { get; set; } = string.Empty;
     }
 }
