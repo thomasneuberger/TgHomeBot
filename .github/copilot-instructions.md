@@ -127,6 +127,7 @@ public static class Bootstrap
 - Configuration sections match the domain (e.g., `HomeAssistant`, `Telegram`, `SmartHome`)
 - Store sensitive data externally (marked as `<set externally>` in appsettings.json)
 - Use user secrets for development, environment variables for production
+- **URL Configuration**: When configuring URLs in appsettings files that reference services in the same repository, always use the same port as defined in the launch configuration (`Properties/launchSettings.json`). For example, if `launchSettings.json` specifies `"applicationUrl": "http://localhost:5271"`, then `Application.BaseUrl` in appsettings should also use port `5271`.
 
 ### Logging
 

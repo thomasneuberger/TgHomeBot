@@ -376,7 +376,7 @@ internal class EaseeConnector : IChargingConnector
             if (!refreshed)
             {
                 var loginUrl = $"{_applicationOptions.BaseUrl.TrimEnd('/')}/Easee/Login";
-                throw new InvalidOperationException($"Nicht mit Easee API authentifiziert. Bitte anmelden: {loginUrl}");
+                throw new InvalidOperationException($"Nicht mit Easee API authentifiziert. Bitte <a href=\"{loginUrl}\">anmelden</a>");
             }
         }
     }

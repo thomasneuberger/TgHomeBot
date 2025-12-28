@@ -16,7 +16,7 @@ Add the following sections to your `appsettings.json`:
 ```json
 {
   "Application": {
-    "BaseUrl": "http://localhost:5000"
+    "BaseUrl": "http://localhost:5271"
   },
   "Easee": {
     "BaseUrl": "https://api.easee.com"
@@ -27,7 +27,7 @@ Add the following sections to your `appsettings.json`:
 }
 ```
 
-- **Application.BaseUrl**: The base URL where your TgHomeBot application is hosted. This is used to generate login links in error messages.
+- **Application.BaseUrl**: The base URL where your TgHomeBot application is hosted. This is used to generate login links in error messages. Use the same port as defined in `launchSettings.json` (default: 5271).
 - **Easee.BaseUrl**: The Easee API endpoint (typically `https://api.easee.com`)
 - **FileStorage.Path**: Directory where the authentication token will be stored
 
@@ -43,12 +43,14 @@ Navigate to `/Easee/Login` to access the authentication page where you can enter
 
 ### Authentication Errors
 
-When using the Telegram bot commands (e.g., `/monthlyreport`, `/detailedreport`) without valid authentication, the bot will respond with an error message containing a direct link to the login page:
+When using the Telegram bot commands (e.g., `/monthlyreport`, `/detailedreport`) without valid authentication, the bot will respond with an error message containing a clickable link to the login page:
 
 ```
 ❌ Fehler beim Abrufen der Ladevorgänge:
-Nicht mit Easee API authentifiziert. Bitte anmelden: http://your-app-url/Easee/Login
+Nicht mit Easee API authentifiziert. Bitte anmelden
 ```
+
+The word "anmelden" appears as a clickable link that opens the login page directly in the browser.
 
 This makes it easy to authenticate directly from the Telegram error message.
 
