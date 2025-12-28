@@ -5,6 +5,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TgHomeBot.Notifications.Contract;
 using TgHomeBot.Notifications.Telegram.Commands;
+using TgHomeBot.Notifications.Telegram.Models;
 using TgHomeBot.Notifications.Telegram.Services;
 
 namespace TgHomeBot.Notifications.Telegram;
@@ -167,6 +168,11 @@ internal class TelegramConnector(
 
 	public async Task SendAsync(string message)
 	{
+		await SendAsync(message, NotificationType.General);
+	}
+
+	public async Task SendAsync(string message, NotificationType notificationType)
+	{
 		if (!_isConnected)
 		{
 			logger.LogWarning("Cannot send message - Telegram bot is not connected yet.");
@@ -175,6 +181,13 @@ internal class TelegramConnector(
 
 		foreach (var registeredChat in registeredChatService.RegisteredChats)
 		{
+			// Filter based on notification type and feature flags
+			if (!ShouldSendNotification(registeredChat, notificationType))
+			{
+				logger.LogDebug("Skipping notification of type {NotificationType} for chat {ChatId} due to feature flag", notificationType, registeredChat.ChatId);
+				continue;
+			}
+
 			try
 			{
 				await _botClient.SendTextMessageAsync(registeredChat.ChatId, message, parseMode: ParseMode.Html);
@@ -185,5 +198,17 @@ internal class TelegramConnector(
 				logger.LogError(ex, "Failed to send message to chat {ChatId}: {Exception}", registeredChat.ChatId, ex.Message);
 			}
 		}
+	}
+
+	private static bool ShouldSendNotification(RegisteredChat chat, NotificationType notificationType)
+	{
+		return notificationType switch
+		{
+			NotificationType.Eurojackpot => chat.EurojackpotEnabled,
+			NotificationType.MonthlyChargingReport => chat.MonthlyChargingReportEnabled,
+			NotificationType.DeviceNotification => chat.DeviceNotificationsEnabled,
+			NotificationType.General => true,
+			_ => true
+		};
 	}
 }

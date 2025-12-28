@@ -8,6 +8,6 @@ internal class NotifyRequestHandler(INotificationConnector connector) : IRequest
 {
     public Task Handle(NotifyRequest request, CancellationToken cancellationToken)
     {
-        return connector.SendAsync(request.Message);
+        return connector.SendAsync(request.Message, request.NotificationType);
     }
 }

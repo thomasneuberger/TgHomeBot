@@ -28,6 +28,9 @@ public static class Bootstrap
         services.AddSingleton<ICommand, LogFileCommand>();
         services.AddSingleton<ICommand, MonthlyReportCommand>();
         services.AddSingleton<ICommand, DetailedReportCommand>();
+        services.AddSingleton<ICommand, ToggleEurojackpotCommand>();
+        services.AddSingleton<ICommand, ToggleMonthlyReportCommand>();
+        services.AddSingleton<ICommand, ToggleDeviceNotificationsCommand>();
 
 		services.AddSingleton<INotificationConnector, TelegramConnector>();
 

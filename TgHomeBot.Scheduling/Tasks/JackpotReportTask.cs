@@ -65,7 +65,7 @@ public class JackpotReportTask : IScheduledTask
 
             var message = FormatJackpotMessage(apiResponse.Last, apiResponse.Next);
 
-            await _notificationConnector.SendAsync(message);
+            await _notificationConnector.SendAsync(message, NotificationType.Eurojackpot);
             _logger.LogInformation("Successfully sent Eurojackpot jackpot report");
         }
         catch (Exception ex)

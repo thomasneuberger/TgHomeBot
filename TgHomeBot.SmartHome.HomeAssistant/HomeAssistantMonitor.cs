@@ -5,6 +5,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using TgHomeBot.Notifications.Contract;
 using TgHomeBot.Notifications.Contract.Requests;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
@@ -234,7 +235,7 @@ public class HomeAssistantMonitor(
                         {
                             using var scope = serviceProvider.CreateScope();
                             var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                            await mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist fertig."));
+                            await mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist fertig.", NotificationType.DeviceNotification));
                         }
                     }
                     else

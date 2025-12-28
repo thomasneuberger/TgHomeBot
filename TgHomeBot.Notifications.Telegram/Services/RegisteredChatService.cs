@@ -80,6 +80,53 @@ internal class RegisteredChatService : IRegisteredChatService
 
     }
 
+    public async Task<bool> ToggleEurojackpotAsync(long chatId)
+    {
+        var chat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+        if (chat is null)
+        {
+            return false;
+        }
+
+        chat.EurojackpotEnabled = !chat.EurojackpotEnabled;
+        await SaveRegisteredChats();
+        _logger.LogInformation("Toggled Eurojackpot flag for chat {ChatId} to {Enabled}", chatId, chat.EurojackpotEnabled);
+        return true;
+    }
+
+    public async Task<bool> ToggleMonthlyChargingReportAsync(long chatId)
+    {
+        var chat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+        if (chat is null)
+        {
+            return false;
+        }
+
+        chat.MonthlyChargingReportEnabled = !chat.MonthlyChargingReportEnabled;
+        await SaveRegisteredChats();
+        _logger.LogInformation("Toggled Monthly Charging Report flag for chat {ChatId} to {Enabled}", chatId, chat.MonthlyChargingReportEnabled);
+        return true;
+    }
+
+    public async Task<bool> ToggleDeviceNotificationsAsync(long chatId)
+    {
+        var chat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+        if (chat is null)
+        {
+            return false;
+        }
+
+        chat.DeviceNotificationsEnabled = !chat.DeviceNotificationsEnabled;
+        await SaveRegisteredChats();
+        _logger.LogInformation("Toggled Device Notifications flag for chat {ChatId} to {Enabled}", chatId, chat.DeviceNotificationsEnabled);
+        return true;
+    }
+
+    public RegisteredChat? GetRegisteredChat(long chatId)
+    {
+        return _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+    }
+
     private async Task SaveRegisteredChats()
     {
         var json = JsonSerializer.Serialize(_registeredChats, _jsonSerializerOptions);
