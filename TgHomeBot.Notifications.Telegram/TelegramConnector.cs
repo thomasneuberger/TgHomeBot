@@ -5,6 +5,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TgHomeBot.Notifications.Contract;
 using TgHomeBot.Notifications.Telegram.Commands;
+using TgHomeBot.Notifications.Telegram.Models;
 using TgHomeBot.Notifications.Telegram.Services;
 
 namespace TgHomeBot.Notifications.Telegram;
@@ -63,16 +64,40 @@ internal class TelegramConnector(
 					.Select(c => new BotCommand { Command = c.Name, Description = c.Description })
 					.ToList();
 
+				// Update chat names on successful connection
+				var chatNamesUpdated = false;
 				foreach (var chat in registeredChatService.RegisteredChats)
 				{
 					try
 					{
 						await _botClient.SetMyCommandsAsync(botCommands, BotCommandScope.Chat(new ChatId(chat.ChatId)), cancellationToken: cancellationToken);
+						
+						// Try to get and update chat info
+						try
+						{
+							var chatInfo = await _botClient.GetChatAsync(new ChatId(chat.ChatId), cancellationToken: cancellationToken);
+							var newChatName = chatInfo.Title ?? chatInfo.FirstName;
+							if (!string.IsNullOrEmpty(newChatName) && chat.ChatName != newChatName)
+							{
+								chat.ChatName = newChatName;
+								chatNamesUpdated = true;
+								logger.LogInformation("Updated chat name for {ChatId} to {ChatName}", chat.ChatId, newChatName);
+							}
+						}
+						catch (Exception ex)
+						{
+							logger.LogDebug(ex, "Could not get chat info for {ChatId}", chat.ChatId);
+						}
 					}
 					catch (Exception ex)
 					{
 						logger.LogWarning(ex, "Failed to set commands for chat {ChatId}", chat.ChatId);
 					}
+				}
+
+				if (chatNamesUpdated)
+				{
+					await registeredChatService.SaveChangesAsync();
 				}
 
 				_botClient.StartReceiving(ReceiveUpdate, HandleError, cancellationToken: cancellationToken);
@@ -141,6 +166,19 @@ internal class TelegramConnector(
 			return;
 		}
 
+		// Update chat name if it has changed
+		var existingChat = registeredChatService.GetRegisteredChat(update.Message.Chat.Id);
+		if (existingChat is not null)
+		{
+			var chatName = update.Message.Chat.Title ?? update.Message.Chat.FirstName;
+			if (!string.IsNullOrEmpty(chatName) && existingChat.ChatName != chatName)
+			{
+				existingChat.ChatName = chatName;
+				await registeredChatService.SaveChangesAsync();
+				logger.LogInformation("Updated chat name for {ChatId} to {ChatName}", existingChat.ChatId, chatName);
+			}
+		}
+
 		var commandText = update.Message.Text.Split('_', StringSplitOptions.RemoveEmptyEntries)[0];
 
         if (commandText.Contains("@") && !string.IsNullOrWhiteSpace(_botName))
@@ -167,6 +205,11 @@ internal class TelegramConnector(
 
 	public async Task SendAsync(string message)
 	{
+		await SendAsync(message, NotificationType.General);
+	}
+
+	public async Task SendAsync(string message, NotificationType notificationType)
+	{
 		if (!_isConnected)
 		{
 			logger.LogWarning("Cannot send message - Telegram bot is not connected yet.");
@@ -175,6 +218,13 @@ internal class TelegramConnector(
 
 		foreach (var registeredChat in registeredChatService.RegisteredChats)
 		{
+			// Filter based on notification type and feature flags
+			if (!ShouldSendNotification(registeredChat, notificationType))
+			{
+				logger.LogDebug("Skipping notification of type {NotificationType} for chat {ChatId} due to feature flag", notificationType, registeredChat.ChatId);
+				continue;
+			}
+
 			try
 			{
 				await _botClient.SendTextMessageAsync(registeredChat.ChatId, message, parseMode: ParseMode.Html);
@@ -185,5 +235,17 @@ internal class TelegramConnector(
 				logger.LogError(ex, "Failed to send message to chat {ChatId}: {Exception}", registeredChat.ChatId, ex.Message);
 			}
 		}
+	}
+
+	private static bool ShouldSendNotification(RegisteredChat chat, NotificationType notificationType)
+	{
+		return notificationType switch
+		{
+			NotificationType.Eurojackpot => chat.EurojackpotEnabled,
+			NotificationType.MonthlyChargingReport => chat.MonthlyChargingReportEnabled,
+			NotificationType.DeviceNotification => chat.DeviceNotificationsEnabled,
+			NotificationType.General => true,
+			_ => true
+		};
 	}
 }
