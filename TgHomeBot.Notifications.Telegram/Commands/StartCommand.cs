@@ -28,7 +28,8 @@ internal class StartCommand(IOptions<TelegramOptions> options, IRegisteredChatSe
         var userId = message.From.Id;
         var username = message.From.Username;
         var chatId = message.Chat.Id;
-        if (await registeredChatService.RegisterChat(userId, username, chatId))
+        var chatName = message.Chat.Title ?? message.Chat.FirstName;
+        if (await registeredChatService.RegisterChat(userId, username, chatId, chatName))
         {
             await client.SendTextMessageAsync(chatId,
                 "Willkommen zu TgHomeBot. Du kannst die Verbindung mit /end trennen.",

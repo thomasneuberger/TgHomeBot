@@ -46,6 +46,11 @@ internal class RegisteredChatService : IRegisteredChatService
 
     public async Task<bool> RegisterChat(long userId, string username, long chatId)
     {
+        return await RegisterChat(userId, username, chatId, null);
+    }
+
+    public async Task<bool> RegisterChat(long userId, string username, long chatId, string? chatName)
+    {
         var existingChat = _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
         if (existingChat is not null)
         {
@@ -56,12 +61,13 @@ internal class RegisteredChatService : IRegisteredChatService
         {
             Id = userId,
             Username = username,
-            ChatId = chatId
+            ChatId = chatId,
+            ChatName = chatName
         });
 
         await SaveRegisteredChats();
 
-        _logger.LogInformation("Registered chat {ChatId} with user {User}", chatId, username);
+        _logger.LogInformation("Registered chat {ChatId} with user {User} and chat name {ChatName}", chatId, username, chatName);
 
         return true;
     }
@@ -125,6 +131,12 @@ internal class RegisteredChatService : IRegisteredChatService
     public RegisteredChat? GetRegisteredChat(long chatId)
     {
         return _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
+    }
+
+    public async Task UpdateChatNamesAsync()
+    {
+        // This method is called by TelegramConnector to trigger saving after chat names are updated
+        await SaveRegisteredChats();
     }
 
     private async Task SaveRegisteredChats()

@@ -26,12 +26,37 @@ public class NotificationController(IMediator mediator, IRegisteredChatService r
 				c.Id,
 				c.Username,
 				c.ChatId,
+				c.ChatName,
 				c.EurojackpotEnabled,
 				c.MonthlyChargingReportEnabled,
 				c.DeviceNotificationsEnabled
 			});
 		
 		return Ok(chats);
+	}
+
+	[HttpGet("chat/{chatId}/flags")]
+	public ActionResult<object> GetChatFlags(long chatId)
+	{
+		var chat = registeredChatService.GetRegisteredChat(chatId);
+		
+		if (chat is null)
+		{
+			return NotFound(new { message = "Chat not found" });
+		}
+
+		return Ok(new
+		{
+			chatId = chat.ChatId,
+			username = chat.Username,
+			chatName = chat.ChatName,
+			flags = new
+			{
+				eurojackpot = chat.EurojackpotEnabled,
+				monthlyChargingReport = chat.MonthlyChargingReportEnabled,
+				deviceNotifications = chat.DeviceNotificationsEnabled
+			}
+		});
 	}
 
 	[HttpPost("chat/{chatId}/flags/eurojackpot/toggle")]

@@ -7,6 +7,8 @@ public class RegisteredChat
 
 	public required long ChatId { get; set; }
 
+	public string? ChatName { get; set; }
+
 	public bool EurojackpotEnabled { get; set; } = true;
 
 	public bool MonthlyChargingReportEnabled { get; set; } = true;

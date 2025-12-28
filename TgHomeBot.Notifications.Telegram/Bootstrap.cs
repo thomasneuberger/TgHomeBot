@@ -33,6 +33,7 @@ public static class Bootstrap
         services.AddSingleton<ICommand, ToggleEurojackpotCommand>();
         services.AddSingleton<ICommand, ToggleMonthlyReportCommand>();
         services.AddSingleton<ICommand, ToggleDeviceNotificationsCommand>();
+        services.AddSingleton<ICommand, FlagsCommand>();
 
 		services.AddSingleton<INotificationConnector, TelegramConnector>();
 

@@ -64,16 +64,40 @@ internal class TelegramConnector(
 					.Select(c => new BotCommand { Command = c.Name, Description = c.Description })
 					.ToList();
 
+				// Update chat names on successful connection
+				var chatNamesUpdated = false;
 				foreach (var chat in registeredChatService.RegisteredChats)
 				{
 					try
 					{
 						await _botClient.SetMyCommandsAsync(botCommands, BotCommandScope.Chat(new ChatId(chat.ChatId)), cancellationToken: cancellationToken);
+						
+						// Try to get and update chat info
+						try
+						{
+							var chatInfo = await _botClient.GetChatAsync(new ChatId(chat.ChatId), cancellationToken: cancellationToken);
+							var newChatName = chatInfo.Title ?? chatInfo.FirstName;
+							if (!string.IsNullOrEmpty(newChatName) && chat.ChatName != newChatName)
+							{
+								chat.ChatName = newChatName;
+								chatNamesUpdated = true;
+								logger.LogInformation("Updated chat name for {ChatId} to {ChatName}", chat.ChatId, newChatName);
+							}
+						}
+						catch (Exception ex)
+						{
+							logger.LogDebug(ex, "Could not get chat info for {ChatId}", chat.ChatId);
+						}
 					}
 					catch (Exception ex)
 					{
 						logger.LogWarning(ex, "Failed to set commands for chat {ChatId}", chat.ChatId);
 					}
+				}
+
+				if (chatNamesUpdated)
+				{
+					await registeredChatService.UpdateChatNamesAsync();
 				}
 
 				_botClient.StartReceiving(ReceiveUpdate, HandleError, cancellationToken: cancellationToken);
@@ -140,6 +164,19 @@ internal class TelegramConnector(
 		if (update is not { Message: { From.Username: not null, Text: not null } })
 		{
 			return;
+		}
+
+		// Update chat name if it has changed
+		var existingChat = registeredChatService.GetRegisteredChat(update.Message.Chat.Id);
+		if (existingChat is not null)
+		{
+			var chatName = update.Message.Chat.Title ?? update.Message.Chat.FirstName;
+			if (!string.IsNullOrEmpty(chatName) && existingChat.ChatName != chatName)
+			{
+				existingChat.ChatName = chatName;
+				await registeredChatService.UpdateChatNamesAsync();
+				logger.LogInformation("Updated chat name for {ChatId} to {ChatName}", existingChat.ChatId, chatName);
+			}
 		}
 
 		var commandText = update.Message.Text.Split('_', StringSplitOptions.RemoveEmptyEntries)[0];
