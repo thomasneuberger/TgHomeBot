@@ -17,7 +17,7 @@ internal class LogFileCommand(IRegisteredChatService registeredChatService, ILog
 
         if (isRegistered)
         {
-            var command = message.Text?.Split('_').LastOrDefault();
+            var command = StripBotName(message.Text?.Split('_').LastOrDefault() ?? string.Empty);
             var filename = logFileProvider.GetLogFileList()
                 .FirstOrDefault(f => command == GetFileCommandName(f));
             if (string.IsNullOrWhiteSpace(filename))
@@ -46,5 +46,20 @@ internal class LogFileCommand(IRegisteredChatService registeredChatService, ILog
     private static string GetFileCommandName(string filename)
     {
         return Path.GetFileNameWithoutExtension(filename).Replace("-", "");
+    }
+
+    /// <summary>
+    /// Removes the bot name suffix from a parameter (e.g., "filename@botname" -> "filename")
+    /// This is necessary because Telegram appends @botname to commands in group chats
+    /// </summary>
+    private static string StripBotName(string parameter)
+    {
+        if (string.IsNullOrEmpty(parameter))
+        {
+            return parameter;
+        }
+
+        var atIndex = parameter.IndexOf('@');
+        return atIndex > 0 ? parameter[..atIndex] : parameter;
     }
 }

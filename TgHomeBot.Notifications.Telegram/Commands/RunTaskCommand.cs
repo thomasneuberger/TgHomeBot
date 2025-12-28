@@ -45,7 +45,7 @@ internal class RunTaskCommand(IServiceProvider serviceProvider) : ICommand
             return;
         }
 
-        var taskType = parts[1];
+        var taskType = StripBotName(parts[1]);
 
         using var executionScope = serviceProvider.CreateScope();
         var scheduler = executionScope.ServiceProvider.GetRequiredService<ISchedulerService>();
@@ -69,5 +69,20 @@ internal class RunTaskCommand(IServiceProvider serviceProvider) : ICommand
                 parseMode: global::Telegram.Bot.Types.Enums.ParseMode.Html,
                 cancellationToken: cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Removes the bot name suffix from a parameter (e.g., "TaskName@botname" -> "TaskName")
+    /// This is necessary because Telegram appends @botname to commands in group chats
+    /// </summary>
+    private static string StripBotName(string parameter)
+    {
+        if (string.IsNullOrEmpty(parameter))
+        {
+            return parameter;
+        }
+
+        var atIndex = parameter.IndexOf('@');
+        return atIndex > 0 ? parameter[..atIndex] : parameter;
     }
 }
