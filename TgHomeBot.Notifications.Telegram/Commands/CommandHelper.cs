@@ -19,6 +19,6 @@ internal static class CommandHelper
         }
 
         var atIndex = parameter.IndexOf('@');
-        return atIndex > 0 ? parameter[..atIndex] : parameter;
+        return atIndex >= 0 ? parameter[..atIndex] : parameter;
     }
 }
