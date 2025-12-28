@@ -45,7 +45,7 @@ internal class RunTaskCommand(IServiceProvider serviceProvider) : ICommand
             return;
         }
 
-        var taskType = parts[1];
+        var taskType = CommandHelper.StripBotName(parts[1]);
 
         using var executionScope = serviceProvider.CreateScope();
         var scheduler = executionScope.ServiceProvider.GetRequiredService<ISchedulerService>();
