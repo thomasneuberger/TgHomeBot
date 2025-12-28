@@ -30,7 +30,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider) : IComman
         {
             await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
                 $"❌ Fehler beim Abrufen der Ladevorgänge:\n{result.ErrorMessage}",
-                parseMode: global::Telegram.Bot.Types.Enums.ParseMode.Html,
+                parseMode: global::Telegram.Bot.Types.Enums.ParseMode.MarkdownV2,
                 cancellationToken: cancellationToken);
             return;
         }
