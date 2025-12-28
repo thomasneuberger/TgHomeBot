@@ -42,4 +42,4 @@ Toggle feature flags via HTTP API:
 
 Each endpoint returns: `{ "enabled": true/false }`
 
-**Note**: Manual triggers (like `/monthlyreport` command) bypass feature flags and always send to the requesting user.
+**Note**: Manual trigger commands like `/monthlyreport` that respond directly to the requesting user bypass feature flags. However, when running scheduled tasks via `/runtask` command or API endpoints, feature flags are respected.
