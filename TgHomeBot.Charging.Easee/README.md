@@ -11,10 +11,13 @@ This project provides integration with the Easee API for electric vehicle chargi
 
 ## Configuration
 
-Add the following section to your `appsettings.json`:
+Add the following sections to your `appsettings.json`:
 
 ```json
 {
+  "Application": {
+    "BaseUrl": "http://localhost:5000"
+  },
   "Easee": {
     "BaseUrl": "https://api.easee.com"
   },
@@ -23,6 +26,10 @@ Add the following section to your `appsettings.json`:
   }
 }
 ```
+
+- **Application.BaseUrl**: The base URL where your TgHomeBot application is hosted. This is used to generate login links in error messages.
+- **Easee.BaseUrl**: The Easee API endpoint (typically `https://api.easee.com`)
+- **FileStorage.Path**: Directory where the authentication token will be stored
 
 The authentication token will be stored in `{FileStorage.Path}/easee-token.json`.
 
@@ -33,6 +40,17 @@ The authentication token will be stored in `{FileStorage.Path}/easee-token.json`
 Navigate to `/Easee/Login` to access the authentication page where you can enter your Easee credentials.
 
 **Important**: The credentials are not stored - they are only used to authenticate with the Easee API. The resulting access token and refresh token are stored persistently.
+
+### Authentication Errors
+
+When using the Telegram bot commands (e.g., `/monthlyreport`, `/detailedreport`) without valid authentication, the bot will respond with an error message containing a direct link to the login page:
+
+```
+❌ Fehler beim Abrufen der Ladevorgänge:
+Nicht mit Easee API authentifiziert. Bitte anmelden: http://your-app-url/Easee/Login
+```
+
+This makes it easy to authenticate directly from the Telegram error message.
 
 ### Programmatic Authentication
 
