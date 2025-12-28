@@ -6,7 +6,7 @@ namespace TgHomeBot.Notifications.Telegram.Commands;
 
 internal class ToggleEurojackpotCommand(IRegisteredChatService registeredChatService) : ICommand
 {
-    public string Name => "/toggleeurojackpot";
+    public string Name => "/toggle_eurojackpot";
 
     public string Description => "Eurojackpot Benachrichtigungen ein-/ausschalten";
 

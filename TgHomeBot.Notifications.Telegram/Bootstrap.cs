@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TgHomeBot.Charging.Contract.Services;
 using TgHomeBot.Notifications.Contract;
 using TgHomeBot.Notifications.Contract.Requests;
 using TgHomeBot.Notifications.Telegram.Commands;
@@ -15,6 +16,7 @@ public static class Bootstrap
 		services.AddOptions<TelegramOptions>().Configure(options => configuration.GetSection("Telegram").Bind(options));
 
         services.AddSingleton<IRegisteredChatService, RegisteredChatService>();
+        services.AddSingleton<IMonthlyReportFormatter, MonthlyReportFormatter>();
 
         services.AddSingleton<ICommand, StartCommand>();
         services.AddSingleton<ICommand, CheckCommand>();

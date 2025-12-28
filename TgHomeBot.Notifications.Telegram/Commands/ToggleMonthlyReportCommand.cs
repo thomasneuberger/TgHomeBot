@@ -6,7 +6,7 @@ namespace TgHomeBot.Notifications.Telegram.Commands;
 
 internal class ToggleMonthlyReportCommand(IRegisteredChatService registeredChatService) : ICommand
 {
-    public string Name => "/togglemonthlyreport";
+    public string Name => "/toggle_monthlyreport";
 
     public string Description => "Monatliche Ladeberichte ein-/ausschalten";
 

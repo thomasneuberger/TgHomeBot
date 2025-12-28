@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
-using System.Globalization;
 using MediatR;
 using TgHomeBot.Charging.Contract.Requests;
+using TgHomeBot.Charging.Contract.Services;
 using TgHomeBot.Notifications.Contract;
 using TgHomeBot.Notifications.Contract.Requests;
 
@@ -15,17 +15,20 @@ public class MonthlyChargingReportTask : IScheduledTask
     private readonly ILogger<MonthlyChargingReportTask> _logger;
     private readonly INotificationConnector _notificationConnector;
     private readonly IMediator _mediator;
+    private readonly IMonthlyReportFormatter _formatter;
 
     public string TaskName => "MonthlyChargingReportTask";
 
     public MonthlyChargingReportTask(
         ILogger<MonthlyChargingReportTask> logger,
         INotificationConnector notificationConnector,
-        IMediator mediator)
+        IMediator mediator,
+        IMonthlyReportFormatter formatter)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _notificationConnector = notificationConnector ?? throw new ArgumentNullException(nameof(notificationConnector));
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
     }
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -54,30 +57,7 @@ public class MonthlyChargingReportTask : IScheduledTask
                 return;
             }
 
-            // Group by user and month, then sum the energy
-            var monthlyReport = sessions
-                .GroupBy(s => new { s.UserName, Year = s.CarConnected.Year, Month = s.CarConnected.Month })
-                .Select(g => new
-                {
-                    g.Key.UserName,
-                    g.Key.Year,
-                    g.Key.Month,
-                    TotalKwh = g.Sum(s => s.KiloWattHours)
-                })
-                .OrderBy(x => x.UserName)
-                .ThenBy(x => x.Year)
-                .ThenBy(x => x.Month)
-                .ToList();
-
-            var reportLines = new List<string> { "📊 Monatlicher Ladebericht (letzte 2 Monate):" };
-
-            foreach (var entry in monthlyReport)
-            {
-                var monthName = new DateTime(entry.Year, entry.Month, 1).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("de-DE"));
-                reportLines.Add($"👤 {entry.UserName} - {monthName}: {entry.TotalKwh:F2} kWh");
-            }
-
-            var report = string.Join('\n', reportLines);
+            var report = _formatter.FormatMonthlyReport(sessions);
 
             await _notificationConnector.SendAsync(report, NotificationType.MonthlyChargingReport);
             _logger.LogInformation("Successfully sent monthly charging report");

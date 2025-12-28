@@ -17,6 +17,23 @@ public class NotificationController(IMediator mediator, IRegisteredChatService r
 		return Ok();
 	}
 
+	[HttpGet("chats")]
+	public ActionResult<IEnumerable<object>> GetRegisteredChats()
+	{
+		var chats = registeredChatService.RegisteredChats
+			.Select(c => new
+			{
+				c.Id,
+				c.Username,
+				c.ChatId,
+				c.EurojackpotEnabled,
+				c.MonthlyChargingReportEnabled,
+				c.DeviceNotificationsEnabled
+			});
+		
+		return Ok(chats);
+	}
+
 	[HttpPost("chat/{chatId}/flags/eurojackpot/toggle")]
 	public async Task<ActionResult<ToggleFlagResponse>> ToggleEurojackpot(long chatId)
 	{

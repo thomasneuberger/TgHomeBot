@@ -6,7 +6,7 @@ namespace TgHomeBot.Notifications.Telegram.Commands;
 
 internal class ToggleDeviceNotificationsCommand(IRegisteredChatService registeredChatService) : ICommand
 {
-    public string Name => "/toggledevicenotifications";
+    public string Name => "/toggle_devicenotifications";
 
     public string Description => "Gerätebenachrichtigungen ein-/ausschalten";
 
