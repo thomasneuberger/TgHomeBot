@@ -29,6 +29,7 @@ builder.Services.AddSerilog((services, options) =>
 });
 
 builder.Services.AddOptions<FileStorageOptions>().Configure(options => builder.Configuration.GetSection("FileStorage").Bind(options));
+builder.Services.AddOptions<ApplicationOptions>().Configure(options => builder.Configuration.GetSection("Application").Bind(options));
 builder.Services.AddOptions<SerilogLogFileProvider.SerilogOptions>().Configure(options => builder.Configuration.GetSection("Serilog").Bind(options));
 
 builder.Services.AddHomeAssistant(builder.Configuration);
