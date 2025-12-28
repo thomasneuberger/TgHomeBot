@@ -20,6 +20,7 @@ internal class EaseeConnector : IChargingConnector
     private readonly HttpClient _httpClient;
     private readonly FileStorageOptions _fileStorageOptions;
     private readonly IUserAliasService _userAliasService;
+    private readonly ApplicationOptions _applicationOptions;
     private readonly string _tokenFilePath;
     private EaseeTokenData? _tokenData;
     private readonly object _lock = new();
@@ -29,11 +30,13 @@ internal class EaseeConnector : IChargingConnector
         IHttpClientFactory httpClientFactory,
         IOptions<EaseeOptions> easeeOptions,
         IOptions<FileStorageOptions> fileStorageOptions,
+        IOptions<ApplicationOptions> applicationOptions,
         IUserAliasService userAliasService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _httpClient = httpClientFactory?.CreateClient() ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _fileStorageOptions = fileStorageOptions?.Value ?? throw new ArgumentNullException(nameof(fileStorageOptions));
+        _applicationOptions = applicationOptions?.Value ?? throw new ArgumentNullException(nameof(applicationOptions));
         _userAliasService = userAliasService ?? throw new ArgumentNullException(nameof(userAliasService));
         
         var options = easeeOptions?.Value ?? throw new ArgumentNullException(nameof(easeeOptions));
@@ -372,7 +375,7 @@ internal class EaseeConnector : IChargingConnector
             var refreshed = await RefreshTokenAsync(cancellationToken);
             if (!refreshed)
             {
-                throw new InvalidOperationException("Not authenticated with Easee API. Please authenticate first.");
+                throw new InvalidOperationException("Nicht mit Easee API authentifiziert. Bitte anmelden.");
             }
         }
     }
