@@ -95,11 +95,11 @@ public class JackpotReportTask : IScheduledTask
             return "Nicht verfügbar";
         }
 
-        // Remove common currency symbols and separators
-        var cleanedJackpot = jackpot.Replace("€", "").Replace(".", "").Replace(",", "").Trim();
+        // Remove currency symbols and whitespace
+        var cleanedJackpot = jackpot.Replace("€", "").Trim();
         
-        // Try to parse with invariant culture to handle various formats
-        if (decimal.TryParse(cleanedJackpot, NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var amount))
+        // Try to parse as a number - the API typically returns plain numbers
+        if (decimal.TryParse(cleanedJackpot, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
         {
             return $"{amount:N0} €";
         }
