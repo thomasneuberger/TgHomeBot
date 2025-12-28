@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using TgHomeBot.Notifications.Contract;
 
@@ -11,6 +13,8 @@ namespace TgHomeBot.Scheduling.Tasks;
 /// </summary>
 public class JackpotReportTask : IScheduledTask
 {
+    private const string EurojackpotApiUrl = "https://lottoapi.herokuapp.com/eurojackpot-results/1";
+    
     private readonly ILogger<JackpotReportTask> _logger;
     private readonly INotificationConnector _notificationConnector;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -34,7 +38,7 @@ public class JackpotReportTask : IScheduledTask
         try
         {
             var httpClient = _httpClientFactory.CreateClient();
-            var response = await httpClient.GetAsync("https://lottoapi.herokuapp.com/eurojackpot-results/1", cancellationToken);
+            var response = await httpClient.GetAsync(EurojackpotApiUrl, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -42,7 +46,16 @@ public class JackpotReportTask : IScheduledTask
                 return;
             }
 
-            var results = await response.Content.ReadFromJsonAsync<List<EurojackpotResult>>(cancellationToken);
+            List<EurojackpotResult>? results;
+            try
+            {
+                results = await response.Content.ReadFromJsonAsync<List<EurojackpotResult>>(cancellationToken);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize Eurojackpot API response");
+                return;
+            }
 
             if (results == null || results.Count == 0)
             {
@@ -82,12 +95,16 @@ public class JackpotReportTask : IScheduledTask
             return "Nicht verfügbar";
         }
 
-        // Try to parse and format as currency
-        if (decimal.TryParse(jackpot.Replace("€", "").Replace(",", "").Trim(), out var amount))
+        // Remove common currency symbols and separators
+        var cleanedJackpot = jackpot.Replace("€", "").Replace(".", "").Replace(",", "").Trim();
+        
+        // Try to parse with invariant culture to handle various formats
+        if (decimal.TryParse(cleanedJackpot, NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var amount))
         {
             return $"{amount:N0} €";
         }
 
+        // If parsing fails, return the original value
         return jackpot;
     }
 
