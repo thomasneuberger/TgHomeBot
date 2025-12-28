@@ -1,14 +1,18 @@
 using System.Globalization;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgHomeBot.Charging.Contract.Requests;
+using TgHomeBot.Common.Contract;
 
 namespace TgHomeBot.Notifications.Telegram.Commands;
 
-internal class MonthlyReportCommand(IServiceProvider serviceProvider) : ICommand
+internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<ApplicationOptions> applicationOptions) : ICommand
 {
+    private readonly ApplicationOptions _applicationOptions = applicationOptions.Value;
+
     public string Name => "/monthlyreport";
 
     public string Description => "Monatliche Zusammenfassung des geladenen Stroms";
@@ -28,8 +32,16 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider) : ICommand
         {
             await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
                 $"❌ Fehler beim Abrufen der Ladevorgänge:\n{result.ErrorMessage}",
-                parseMode: global::Telegram.Bot.Types.Enums.ParseMode.MarkdownV2,
                 cancellationToken: cancellationToken);
+            
+            // If it's an authentication error, send the login URL as a separate message
+            if (result.ErrorMessage?.Contains("Nicht mit Easee API authentifiziert") == true)
+            {
+                var loginUrl = $"{_applicationOptions.BaseUrl.TrimEnd('/')}/Easee/Login";
+                await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
+                    loginUrl,
+                    cancellationToken: cancellationToken);
+            }
             return;
         }
 

@@ -43,14 +43,20 @@ Navigate to `/Easee/Login` to access the authentication page where you can enter
 
 ### Authentication Errors
 
-When using the Telegram bot commands (e.g., `/monthlyreport`, `/detailedreport`) without valid authentication, the bot will respond with an error message containing a clickable link to the login page:
+When using the Telegram bot commands (e.g., `/monthlyreport`, `/detailedreport`) without valid authentication, the bot will respond with two messages:
 
+1. An error message:
 ```
 ❌ Fehler beim Abrufen der Ladevorgänge:
-Nicht mit Easee API authentifiziert. Bitte anmelden
+Nicht mit Easee API authentifiziert. Bitte anmelden.
 ```
 
-The word "anmelden" appears as a clickable link that opens the login page directly in the browser.
+2. A follow-up message with the login URL:
+```
+http://localhost:5271/Easee/Login
+```
+
+The URL in the second message can be clicked to open the login page directly in the browser.
 
 This makes it easy to authenticate directly from the Telegram error message.
 
