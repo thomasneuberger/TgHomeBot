@@ -133,9 +133,8 @@ internal class RegisteredChatService : IRegisteredChatService
         return _registeredChats.FirstOrDefault(r => r.ChatId == chatId);
     }
 
-    public async Task UpdateChatNamesAsync()
+    public async Task SaveChangesAsync()
     {
-        // This method is called by TelegramConnector to trigger saving after chat names are updated
         await SaveRegisteredChats();
     }
 

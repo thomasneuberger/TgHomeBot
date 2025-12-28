@@ -97,7 +97,7 @@ internal class TelegramConnector(
 
 				if (chatNamesUpdated)
 				{
-					await registeredChatService.UpdateChatNamesAsync();
+					await registeredChatService.SaveChangesAsync();
 				}
 
 				_botClient.StartReceiving(ReceiveUpdate, HandleError, cancellationToken: cancellationToken);
@@ -174,7 +174,7 @@ internal class TelegramConnector(
 			if (!string.IsNullOrEmpty(chatName) && existingChat.ChatName != chatName)
 			{
 				existingChat.ChatName = chatName;
-				await registeredChatService.UpdateChatNamesAsync();
+				await registeredChatService.SaveChangesAsync();
 				logger.LogInformation("Updated chat name for {ChatId} to {ChatName}", existingChat.ChatId, chatName);
 			}
 		}

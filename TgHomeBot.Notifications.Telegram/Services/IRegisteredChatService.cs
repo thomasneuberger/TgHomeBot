@@ -18,5 +18,5 @@ public interface IRegisteredChatService
     Task<bool> ToggleMonthlyChargingReportAsync(long chatId);
     Task<bool> ToggleDeviceNotificationsAsync(long chatId);
     RegisteredChat? GetRegisteredChat(long chatId);
-    Task UpdateChatNamesAsync();
+    Task SaveChangesAsync();
 }
