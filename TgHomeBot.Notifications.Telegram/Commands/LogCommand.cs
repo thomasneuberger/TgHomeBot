@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Telegram.Services;
 
 namespace TgHomeBot.Notifications.Telegram.Commands;
 
-internal class LogCommand(IRegisteredChatService registeredChatService, ILogFileProvider logFileProvider, ILogger<LogCommand> logger) : ICommand
+internal class LogCommand(IRegisteredChatService registeredChatService, ILogFileProvider logFileProvider) : ICommand
 {
     public string Name => "/logs";
 
