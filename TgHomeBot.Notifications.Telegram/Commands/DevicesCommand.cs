@@ -23,6 +23,6 @@ internal class DevicesCommand(IOptions<SmartHomeOptions> options, IServiceProvid
             ? string.Join('\n', devices.Select(d => $"{d.Name}: {d.State}"))
             : "No monitored devices found.";
 
-        await client.SendTextMessageAsync(new ChatId(message.Chat.Id), deviceStates, cancellationToken: cancellationToken);
+        await client.SendMessage(new ChatId(message.Chat.Id), deviceStates, cancellationToken: cancellationToken);
     }
 }

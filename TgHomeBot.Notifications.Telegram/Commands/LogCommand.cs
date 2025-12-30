@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Telegram.Services;
 
 namespace TgHomeBot.Notifications.Telegram.Commands;
 
-internal class LogCommand(IRegisteredChatService registeredChatService, ILogFileProvider logFileProvider, ILogger<LogCommand> logger) : ICommand
+internal class LogCommand(IRegisteredChatService registeredChatService, ILogFileProvider logFileProvider) : ICommand
 {
     public string Name => "/logs";
 
@@ -26,11 +25,11 @@ internal class LogCommand(IRegisteredChatService registeredChatService, ILogFile
                            Those log files are available:
                            {string.Join('\n', logFiles)}
                            """;
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), response, cancellationToken: cancellationToken);
+            await client.SendMessage(new ChatId(message.Chat.Id), response, cancellationToken: cancellationToken);
         }
         else
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), "Es besteht keine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
+            await client.SendMessage(new ChatId(message.Chat.Id), "Es besteht keine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
         }
     }
 

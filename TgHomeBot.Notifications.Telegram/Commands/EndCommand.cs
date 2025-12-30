@@ -11,7 +11,7 @@ internal class EndCommand(IRegisteredChatService registeredChatService) : IComma
     {
         if (await registeredChatService.UnregisterChatAsync(message.Chat.Id))
         {
-            await client.SendTextMessageAsync(message.Chat.Id, "Auf Wiedersehen. Du kannst die Verbindung mit /start wieder herstellen.", cancellationToken: cancellationToken);
+            await client.SendMessage(message.Chat.Id, "Auf Wiedersehen. Du kannst die Verbindung mit /start wieder herstellen.", cancellationToken: cancellationToken);
         }
     }
 }

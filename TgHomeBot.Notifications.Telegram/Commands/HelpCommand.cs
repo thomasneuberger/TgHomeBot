@@ -22,6 +22,6 @@ internal class HelpCommand : ICommand
                       /help: Gibt diese Hilfeinformationen aus.
                       """;
 
-        await client.SendTextMessageAsync(new ChatId(message.Chat.Id), helpMessage, cancellationToken: cancellationToken);
+        await client.SendMessage(new ChatId(message.Chat.Id), helpMessage, cancellationToken: cancellationToken);
     }
 }

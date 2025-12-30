@@ -22,7 +22,7 @@ internal class LogFileCommand(IRegisteredChatService registeredChatService, ILog
                 .FirstOrDefault(f => command == GetFileCommandName(f));
             if (string.IsNullOrWhiteSpace(filename))
             {
-                await client.SendTextMessageAsync(new ChatId(message.Chat.Id), "Datei nicht gefunden.", cancellationToken: cancellationToken);
+                await client.SendMessage(new ChatId(message.Chat.Id), "Datei nicht gefunden.", cancellationToken: cancellationToken);
                 return;
             }
 
@@ -30,16 +30,16 @@ internal class LogFileCommand(IRegisteredChatService registeredChatService, ILog
 
             if (contentStream is null)
             {
-                await client.SendTextMessageAsync(new ChatId(message.Chat.Id), "Datei konnte nicht gelesen werden.", cancellationToken: cancellationToken);
+                await client.SendMessage(new ChatId(message.Chat.Id), "Datei konnte nicht gelesen werden.", cancellationToken: cancellationToken);
                 return;
             }
 
             var file = new InputFileStream(contentStream, filename);
-            await client.SendDocumentAsync(new ChatId(message.Chat.Id), file, cancellationToken: cancellationToken);
+            await client.SendDocument(new ChatId(message.Chat.Id), file, cancellationToken: cancellationToken);
         }
         else
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), "Es besteht keine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
+            await client.SendMessage(new ChatId(message.Chat.Id), "Es besteht keine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
         }
     }
 

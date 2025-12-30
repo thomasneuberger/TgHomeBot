@@ -31,7 +31,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<
 
         if (!result.Success)
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
+            await client.SendMessage(new ChatId(message.Chat.Id),
                 $"❌ Fehler beim Abrufen der Ladevorgänge:\n{result.ErrorMessage}",
                 cancellationToken: cancellationToken);
             
@@ -39,7 +39,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<
             if (result.ErrorMessage?.Contains("Nicht mit Easee API authentifiziert") == true)
             {
                 var loginUrl = $"{_applicationOptions.BaseUrl.TrimEnd('/')}/Easee/Login";
-                await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
+                await client.SendMessage(new ChatId(message.Chat.Id),
                     loginUrl,
                     cancellationToken: cancellationToken);
             }
@@ -50,7 +50,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<
 
         if (sessions.Count == 0)
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
+            await client.SendMessage(new ChatId(message.Chat.Id),
                 "Keine Ladevorgänge in den letzten zwei Monaten gefunden.",
                 cancellationToken: cancellationToken);
             return;
@@ -90,7 +90,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<
         // Split the message if it's too long (Telegram has a 4096 character limit)
         if (report.Length <= MaxTelegramMessageLength)
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), report, cancellationToken: cancellationToken);
+            await client.SendMessage(new ChatId(message.Chat.Id), report, cancellationToken: cancellationToken);
         }
         else
         {
@@ -98,7 +98,7 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<
             var messages = SplitIntoMessages(reportLines, MaxTelegramMessageLength);
             foreach (var msg in messages)
             {
-                await client.SendTextMessageAsync(new ChatId(message.Chat.Id), msg, cancellationToken: cancellationToken);
+                await client.SendMessage(new ChatId(message.Chat.Id), msg, cancellationToken: cancellationToken);
             }
         }
     }

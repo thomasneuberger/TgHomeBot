@@ -31,7 +31,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
 
         if (!result.Success)
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
+            await client.SendMessage(new ChatId(message.Chat.Id),
                 $"❌ Fehler beim Abrufen der Ladevorgänge:\n{result.ErrorMessage}",
                 cancellationToken: cancellationToken);
             
@@ -39,7 +39,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
             if (result.ErrorMessage?.Contains("Nicht mit Easee API authentifiziert") == true)
             {
                 var loginUrl = $"{_applicationOptions.BaseUrl.TrimEnd('/')}/Easee/Login";
-                await client.SendTextMessageAsync(new ChatId(message.Chat.Id),
+                await client.SendMessage(new ChatId(message.Chat.Id),
                     loginUrl,
                     cancellationToken: cancellationToken);
             }
@@ -49,6 +49,6 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
         var sessions = result.Data!;
         var report = formatter.FormatMonthlyReport(sessions);
 
-        await client.SendTextMessageAsync(new ChatId(message.Chat.Id), report, cancellationToken: cancellationToken);
+        await client.SendMessage(new ChatId(message.Chat.Id), report, cancellationToken: cancellationToken);
     }
 }

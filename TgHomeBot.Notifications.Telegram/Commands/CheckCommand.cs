@@ -25,11 +25,11 @@ internal class CheckCommand(IRegisteredChatService registeredChatService, IMedia
                           Es besteht eine Verbindung zum TgHomeBot.
                           Der Status des Smart Home Monitorings ist {state}.
                           """;
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), replyMessage, cancellationToken: cancellationToken);
+            await client.SendMessage(new ChatId(message.Chat.Id), replyMessage, cancellationToken: cancellationToken);
         }
         else
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), "Es besteht keine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
+            await client.SendMessage(new ChatId(message.Chat.Id), "Es besteht keine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
         }
     }
 }

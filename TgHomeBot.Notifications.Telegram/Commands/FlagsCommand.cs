@@ -17,7 +17,7 @@ internal class FlagsCommand(IRegisteredChatService registeredChatService) : ICom
         
         if (chat is null)
         {
-            await client.SendTextMessageAsync(chatId,
+            await client.SendMessage(chatId,
                 "❌ Fehler: Chat ist nicht registriert.",
                 cancellationToken: cancellationToken);
             return;
@@ -29,7 +29,7 @@ internal class FlagsCommand(IRegisteredChatService registeredChatService) : ICom
                           $"🏠 <b>Gerätebenachrichtigungen:</b> {GetStatusEmoji(chat.DeviceNotificationsEnabled)} {GetStatusText(chat.DeviceNotificationsEnabled)}\n\n" +
                           $"<i>Verwende /toggle_[flagname] um einen Flag zu ändern.</i>";
         
-        await client.SendTextMessageAsync(chatId,
+        await client.SendMessage(chatId,
             flagsMessage,
             parseMode: global::Telegram.Bot.Types.Enums.ParseMode.Html,
             cancellationToken: cancellationToken);
