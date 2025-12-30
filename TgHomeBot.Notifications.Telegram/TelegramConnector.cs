@@ -54,7 +54,7 @@ internal class TelegramConnector(
 			{
 				logger.LogInformation("Attempting to connect to Telegram bot (attempt {Attempt}/{MaxRetries})...", retryCount + 1, MaxRetries);
 
-				var bot = await _botClient.GetMeAsync(cancellationToken);
+				var bot = await _botClient.GetMe(cancellationToken);
 				_botName = bot.Username;
 
 				logger.LogInformation("Telegram bot connected: {Bot}", bot);
@@ -70,12 +70,12 @@ internal class TelegramConnector(
 				{
 					try
 					{
-						await _botClient.SetMyCommandsAsync(botCommands, BotCommandScope.Chat(new ChatId(chat.ChatId)), cancellationToken: cancellationToken);
+						await _botClient.SetMyCommands(botCommands, BotCommandScope.Chat(new ChatId(chat.ChatId)), cancellationToken: cancellationToken);
 						
 						// Try to get and update chat info
 						try
 						{
-							var chatInfo = await _botClient.GetChatAsync(new ChatId(chat.ChatId), cancellationToken: cancellationToken);
+							var chatInfo = await _botClient.GetChat(new ChatId(chat.ChatId), cancellationToken: cancellationToken);
 							var newChatName = chatInfo.Title ?? chatInfo.FirstName;
 							if (!string.IsNullOrEmpty(newChatName) && chat.ChatName != newChatName)
 							{
@@ -227,7 +227,7 @@ internal class TelegramConnector(
 
 			try
 			{
-				await _botClient.SendTextMessageAsync(registeredChat.ChatId, message, parseMode: ParseMode.Html);
+				await _botClient.SendMessage(registeredChat.ChatId, message, parseMode: ParseMode.Html);
 				logger.LogInformation("Message sent to chat {ChatId} with user {User}: {Message}", registeredChat.ChatId, registeredChat.Username, message);
 			}
 			catch (Exception ex)

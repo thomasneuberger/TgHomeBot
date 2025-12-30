@@ -17,7 +17,7 @@ internal class ToggleMonthlyReportCommand(IRegisteredChatService registeredChatS
         
         if (!success)
         {
-            await client.SendTextMessageAsync(chatId,
+            await client.SendMessage(chatId,
                 "❌ Fehler: Chat ist nicht registriert.",
                 cancellationToken: cancellationToken);
             return;
@@ -26,7 +26,7 @@ internal class ToggleMonthlyReportCommand(IRegisteredChatService registeredChatS
         var chat = registeredChatService.GetRegisteredChat(chatId);
         var status = chat!.MonthlyChargingReportEnabled ? "aktiviert ✅" : "deaktiviert ❌";
         
-        await client.SendTextMessageAsync(chatId,
+        await client.SendMessage(chatId,
             $"Monatliche Ladeberichte wurden {status}",
             cancellationToken: cancellationToken);
     }

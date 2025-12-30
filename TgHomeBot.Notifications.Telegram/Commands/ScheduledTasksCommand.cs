@@ -19,7 +19,7 @@ internal class ScheduledTasksCommand(IServiceProvider serviceProvider) : IComman
 
         if (tasks.Count == 0)
         {
-            await client.SendTextMessageAsync(
+            await client.SendMessage(
                 new ChatId(message.Chat.Id),
                 "Keine geplanten Aufgaben gefunden.",
                 cancellationToken: cancellationToken);
@@ -42,7 +42,7 @@ internal class ScheduledTasksCommand(IServiceProvider serviceProvider) : IComman
 
         var responseMessage = "<b>📋 Geplante Aufgaben:</b>\n\n" + string.Join("\n\n", taskMessages);
 
-        await client.SendTextMessageAsync(
+        await client.SendMessage(
             new ChatId(message.Chat.Id),
             responseMessage,
             parseMode: global::Telegram.Bot.Types.Enums.ParseMode.Html,

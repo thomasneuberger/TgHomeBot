@@ -17,7 +17,7 @@ internal class ToggleEurojackpotCommand(IRegisteredChatService registeredChatSer
         
         if (!success)
         {
-            await client.SendTextMessageAsync(chatId,
+            await client.SendMessage(chatId,
                 "❌ Fehler: Chat ist nicht registriert.",
                 cancellationToken: cancellationToken);
             return;
@@ -26,7 +26,7 @@ internal class ToggleEurojackpotCommand(IRegisteredChatService registeredChatSer
         var chat = registeredChatService.GetRegisteredChat(chatId);
         var status = chat!.EurojackpotEnabled ? "aktiviert ✅" : "deaktiviert ❌";
         
-        await client.SendTextMessageAsync(chatId,
+        await client.SendMessage(chatId,
             $"Eurojackpot Benachrichtigungen wurden {status}",
             cancellationToken: cancellationToken);
     }

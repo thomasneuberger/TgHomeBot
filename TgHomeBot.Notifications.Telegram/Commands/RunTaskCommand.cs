@@ -23,7 +23,7 @@ internal class RunTaskCommand(IServiceProvider serviceProvider) : ICommand
 
             if (tasks.Count == 0)
             {
-                await client.SendTextMessageAsync(
+                await client.SendMessage(
                     new ChatId(message.Chat.Id),
                     "Keine geplanten Aufgaben verfügbar.",
                     cancellationToken: cancellationToken);
@@ -37,7 +37,7 @@ internal class RunTaskCommand(IServiceProvider serviceProvider) : ICommand
                             "<b>Verfügbare Aufgaben:</b>\n" +
                             $"Klicken Sie auf einen Befehl um ihn auszuführen:\n{taskList}";
 
-            await client.SendTextMessageAsync(
+            await client.SendMessage(
                 new ChatId(message.Chat.Id),
                 helpMessage,
                 parseMode: global::Telegram.Bot.Types.Enums.ParseMode.Html,
@@ -55,7 +55,7 @@ internal class RunTaskCommand(IServiceProvider serviceProvider) : ICommand
 
         if (success)
         {
-            await client.SendTextMessageAsync(
+            await client.SendMessage(
                 new ChatId(message.Chat.Id),
                 $"✅ Aufgabe <code>{taskType}</code> wurde erfolgreich ausgeführt.",
                 parseMode: global::Telegram.Bot.Types.Enums.ParseMode.Html,
@@ -63,7 +63,7 @@ internal class RunTaskCommand(IServiceProvider serviceProvider) : ICommand
         }
         else
         {
-            await client.SendTextMessageAsync(
+            await client.SendMessage(
                 new ChatId(message.Chat.Id),
                 $"❌ Fehler beim Ausführen der Aufgabe <code>{taskType}</code>. Überprüfen Sie die Logs für Details.",
                 parseMode: global::Telegram.Bot.Types.Enums.ParseMode.Html,

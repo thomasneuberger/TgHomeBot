@@ -17,7 +17,7 @@ internal class ToggleDeviceNotificationsCommand(IRegisteredChatService registere
         
         if (!success)
         {
-            await client.SendTextMessageAsync(chatId,
+            await client.SendMessage(chatId,
                 "❌ Fehler: Chat ist nicht registriert.",
                 cancellationToken: cancellationToken);
             return;
@@ -26,7 +26,7 @@ internal class ToggleDeviceNotificationsCommand(IRegisteredChatService registere
         var chat = registeredChatService.GetRegisteredChat(chatId);
         var status = chat!.DeviceNotificationsEnabled ? "aktiviert ✅" : "deaktiviert ❌";
         
-        await client.SendTextMessageAsync(chatId,
+        await client.SendMessage(chatId,
             $"Gerätebenachrichtigungen wurden {status}",
             cancellationToken: cancellationToken);
     }

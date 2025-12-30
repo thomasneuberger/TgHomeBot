@@ -26,11 +26,11 @@ internal class LogCommand(IRegisteredChatService registeredChatService, ILogFile
                            Those log files are available:
                            {string.Join('\n', logFiles)}
                            """;
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), response, cancellationToken: cancellationToken);
+            await client.SendMessage(new ChatId(message.Chat.Id), response, cancellationToken: cancellationToken);
         }
         else
         {
-            await client.SendTextMessageAsync(new ChatId(message.Chat.Id), "Es besteht keine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
+            await client.SendMessage(new ChatId(message.Chat.Id), "Es besteht keine Verbindung zum TgHomeBot", cancellationToken: cancellationToken);
         }
     }
 

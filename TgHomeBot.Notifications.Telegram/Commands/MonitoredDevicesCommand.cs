@@ -21,6 +21,6 @@ internal class MonitoredDevicesCommand(IOptions<SmartHomeOptions> options) : ICo
     {
         var monitoredDevices = JsonSerializer.Serialize(options.Value.MonitoredDevices, JsonOptions);
 
-        await client.SendTextMessageAsync(new ChatId(message.Chat.Id), monitoredDevices, cancellationToken: cancellationToken);
+        await client.SendMessage(new ChatId(message.Chat.Id), monitoredDevices, cancellationToken: cancellationToken);
     }
 }
