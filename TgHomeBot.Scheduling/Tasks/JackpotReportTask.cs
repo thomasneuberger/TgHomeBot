@@ -121,7 +121,9 @@ public class JackpotReportTask : IScheduledTask
 
     private static string FormatJackpotAmount(long jackpot)
     {
-        return jackpot.ToString("N0", CultureInfo.GetCultureInfo("de-DE")) + " €";
+        // API returns jackpot in million euros, convert to euros
+        var jackpotInEuros = jackpot * 1_000_000;
+        return jackpotInEuros.ToString("N0", CultureInfo.GetCultureInfo("de-DE")) + " €";
     }
 
     private class EurojackpotApiResponse
