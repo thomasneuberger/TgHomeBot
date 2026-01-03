@@ -1,18 +1,26 @@
 using System.Globalization;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgHomeBot.Charging.Contract.Requests;
+using TgHomeBot.Charging.Contract.Services;
 using TgHomeBot.Common.Contract;
 
 namespace TgHomeBot.Notifications.Telegram.Commands;
 
-internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<ApplicationOptions> applicationOptions) : ICommand
+internal class DetailedReportCommand(
+    IServiceProvider serviceProvider,
+    IOptions<ApplicationOptions> applicationOptions,
+    IOptions<FileStorageOptions> fileStorageOptions,
+    IDetailedReportCsvGenerator csvGenerator,
+    ILogger<DetailedReportCommand> logger) : ICommand
 {
     private const int MaxTelegramMessageLength = 4000;
     private readonly ApplicationOptions _applicationOptions = applicationOptions.Value;
+    private readonly FileStorageOptions _fileStorageOptions = fileStorageOptions.Value;
 
     public string Name => "/detailedreport";
 
@@ -87,6 +95,9 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<
 
         var report = string.Join('\n', reportLines);
 
+        // Generate CSV files for each month
+        var csvFiles = await GenerateCsvFilesAsync(sessions, cancellationToken);
+
         // Split the message if it's too long (Telegram has a 4096 character limit)
         if (report.Length <= MaxTelegramMessageLength)
         {
@@ -100,6 +111,14 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<
             {
                 await client.SendMessage(new ChatId(message.Chat.Id), msg, cancellationToken: cancellationToken);
             }
+        }
+
+        // Send CSV files
+        foreach (var csvFile in csvFiles)
+        {
+            using var stream = new MemoryStream(csvFile.Data);
+            var inputFile = new InputFileStream(stream, csvFile.FileName);
+            await client.SendDocument(new ChatId(message.Chat.Id), inputFile, cancellationToken: cancellationToken);
         }
     }
 
@@ -149,5 +168,62 @@ internal class DetailedReportCommand(IServiceProvider serviceProvider, IOptions<
         }
 
         return messages;
+    }
+
+    private async Task<List<CsvFileData>> GenerateCsvFilesAsync(IReadOnlyList<Charging.Contract.Models.ChargingSession> sessions, CancellationToken cancellationToken)
+    {
+        var csvFiles = new List<CsvFileData>();
+        
+        // Group sessions by month
+        var monthlyGroups = sessions
+            .GroupBy(s => new { s.CarConnected.Year, s.CarConnected.Month })
+            .OrderBy(g => g.Key.Year)
+            .ThenBy(g => g.Key.Month)
+            .ToList();
+
+        var currentMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+
+        foreach (var group in monthlyGroups)
+        {
+            var monthDate = new DateTime(group.Key.Year, group.Key.Month, 1);
+            var monthSessions = group.ToList();
+
+            var csvData = csvGenerator.GenerateMonthlyCsv(monthSessions, group.Key.Year, group.Key.Month);
+            var fileName = csvGenerator.GetFileName(group.Key.Year, group.Key.Month);
+            
+            csvFiles.Add(new CsvFileData { FileName = fileName, Data = csvData });
+
+            // If the month has already ended, save the CSV to file storage
+            if (monthDate < currentMonth)
+            {
+                await SaveCsvToStorageAsync(fileName, csvData, cancellationToken);
+            }
+        }
+
+        return csvFiles;
+    }
+
+    private async Task SaveCsvToStorageAsync(string fileName, byte[] csvData, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var directory = Path.Combine(_fileStorageOptions.Path, "monthly-reports");
+            Directory.CreateDirectory(directory);
+            
+            var filePath = Path.Combine(directory, fileName);
+            await File.WriteAllBytesAsync(filePath, csvData, cancellationToken);
+            
+            logger.LogInformation("Saved CSV report to {FilePath}", filePath);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to save CSV report {FileName} to storage", fileName);
+        }
+    }
+
+    private class CsvFileData
+    {
+        public required string FileName { get; init; }
+        public required byte[] Data { get; init; }
     }
 }

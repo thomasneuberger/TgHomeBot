@@ -18,6 +18,7 @@ public static class Bootstrap
         services.AddSingleton<IRegisteredChatService, RegisteredChatService>();
         services.AddSingleton<IMonthlyReportFormatter, MonthlyReportFormatter>();
         services.AddSingleton<IMonthlyReportPdfGenerator, MonthlyReportPdfGenerator>();
+        services.AddSingleton<IDetailedReportCsvGenerator, DetailedReportCsvGenerator>();
 
         services.AddSingleton<ICommand, StartCommand>();
         services.AddSingleton<ICommand, CheckCommand>();
