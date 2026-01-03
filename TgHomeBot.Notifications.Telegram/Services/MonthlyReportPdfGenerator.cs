@@ -220,7 +220,7 @@ internal class MonthlyReportPdfGenerator : IMonthlyReportPdfGenerator
     public string GetOverviewFileName()
     {
         // Format: YYYYMMDD_Charging_Overview.pdf
-        var currentDate = DateTime.Now.ToString("yyyyMMdd");
+        var currentDate = DateTime.UtcNow.ToString("yyyyMMdd");
         return $"{currentDate}_Charging_Overview.pdf";
     }
 

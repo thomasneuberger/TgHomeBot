@@ -103,9 +103,10 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
             var filePath = Path.Combine(directory, fileName);
             await File.WriteAllBytesAsync(filePath, pdfData);
         }
-        catch
+        catch (Exception)
         {
-            // Silently ignore storage errors in command context
+            // Silently ignore storage errors in command context to avoid disrupting user interaction
+            // Errors are already logged in the scheduled task context
         }
     }
 }
