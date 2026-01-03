@@ -165,4 +165,60 @@ public class MonthlyReportPdfGeneratorTests
         Assert.That(pdfData, Is.Not.Null);
         Assert.That(pdfData.Length, Is.GreaterThan(0));
     }
+
+    [Test]
+    public void GenerateOverviewPdf_ShouldCreateValidPdf()
+    {
+        // Arrange
+        var sessions = new List<ChargingSession>
+        {
+            new()
+            {
+                UserId = "user1",
+                UserName = "Test User 1",
+                CarConnected = new DateTime(2024, 2, 15, 10, 0, 0),
+                CarDisconnected = new DateTime(2024, 2, 15, 12, 0, 0),
+                KiloWattHours = 25.5
+            },
+            new()
+            {
+                UserId = "user1",
+                UserName = "Test User 1",
+                CarConnected = new DateTime(2024, 3, 20, 14, 0, 0),
+                CarDisconnected = new DateTime(2024, 3, 20, 16, 0, 0),
+                KiloWattHours = 30.2
+            },
+            new()
+            {
+                UserId = "user2",
+                UserName = "Test User 2",
+                CarConnected = new DateTime(2024, 3, 22, 14, 0, 0),
+                CarDisconnected = new DateTime(2024, 3, 22, 16, 0, 0),
+                KiloWattHours = 28.5
+            }
+        };
+
+        // Act
+        var pdfData = _generator.GenerateOverviewPdf(sessions);
+
+        // Assert
+        Assert.That(pdfData, Is.Not.Null);
+        Assert.That(pdfData.Length, Is.GreaterThan(0));
+        // Check PDF signature
+        Assert.That(pdfData[0], Is.EqualTo((byte)'%'));
+        Assert.That(pdfData[1], Is.EqualTo((byte)'P'));
+        Assert.That(pdfData[2], Is.EqualTo((byte)'D'));
+        Assert.That(pdfData[3], Is.EqualTo((byte)'F'));
+    }
+
+    [Test]
+    public void GetOverviewFileName_ShouldReturnCorrectFormat()
+    {
+        // Act
+        var fileName = _generator.GetOverviewFileName();
+
+        // Assert
+        Assert.That(fileName, Does.EndWith("_Charging_Overview.pdf"));
+        Assert.That(fileName, Does.Match(@"^\d{8}_Charging_Overview\.pdf$"));
+    }
 }

@@ -17,10 +17,23 @@ public interface IMonthlyReportPdfGenerator
     byte[] GenerateMonthlyPdf(IReadOnlyList<ChargingSession> sessions, int year, int month);
     
     /// <summary>
+    /// Generates an overview PDF report for all charging sessions across multiple months
+    /// </summary>
+    /// <param name="sessions">All charging sessions to include in the overview</param>
+    /// <returns>PDF file as byte array</returns>
+    byte[] GenerateOverviewPdf(IReadOnlyList<ChargingSession> sessions);
+    
+    /// <summary>
     /// Gets the file name for a monthly report PDF
     /// </summary>
     /// <param name="year">Year of the report</param>
     /// <param name="month">Month of the report</param>
     /// <returns>File name (max 20 chars + .pdf extension)</returns>
     string GetFileName(int year, int month);
+    
+    /// <summary>
+    /// Gets the file name for an overview report PDF
+    /// </summary>
+    /// <returns>File name with current date</returns>
+    string GetOverviewFileName();
 }

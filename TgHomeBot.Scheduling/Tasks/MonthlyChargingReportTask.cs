@@ -67,6 +67,15 @@ public class MonthlyChargingReportTask : IScheduledTask
 
             var report = _formatter.FormatMonthlyReport(sessions);
 
+            // Generate overview PDF for the entire time range
+            var overviewPdfData = _pdfGenerator.GenerateOverviewPdf(sessions);
+            var overviewFileName = _pdfGenerator.GetOverviewFileName();
+
+            var pdfFiles = new List<FileAttachment>
+            {
+                new FileAttachment { FileName = overviewFileName, Data = overviewPdfData }
+            };
+
             // Generate PDFs for each month that has data
             var monthlyGroups = sessions
                 .GroupBy(s => new { s.CarConnected.Year, s.CarConnected.Month })
@@ -74,7 +83,6 @@ public class MonthlyChargingReportTask : IScheduledTask
                 .ThenBy(g => g.Key.Month)
                 .ToList();
 
-            var pdfFiles = new List<FileAttachment>();
             var currentMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
 
             foreach (var group in monthlyGroups)
@@ -94,15 +102,8 @@ public class MonthlyChargingReportTask : IScheduledTask
                 }
             }
 
-            // Send report with PDF attachments
-            if (pdfFiles.Count > 0)
-            {
-                await _notificationConnector.SendWithFilesAsync(report, pdfFiles, NotificationType.MonthlyChargingReport);
-            }
-            else
-            {
-                await _notificationConnector.SendAsync(report, NotificationType.MonthlyChargingReport);
-            }
+            // Send report with PDF attachments (overview first, then monthly reports)
+            await _notificationConnector.SendWithFilesAsync(report, pdfFiles, NotificationType.MonthlyChargingReport);
             
             _logger.LogInformation("Successfully sent monthly charging report with {PdfCount} PDF files", pdfFiles.Count);
         }
