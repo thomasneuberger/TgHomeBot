@@ -20,16 +20,18 @@ internal class DetailedReportCsvGenerator : IDetailedReportCsvGenerator
             .ThenBy(s => s.CarConnected)
             .ToList();
         
+        // Use German culture for European CSV format (semicolon separator, comma decimal separator)
+        var culture = CultureInfo.GetCultureInfo("de-DE");
+        
         foreach (var session in orderedSessions)
         {
             var userName = EscapeCsvField(session.UserName);
             var startTime = session.CarConnected.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
             var endTime = session.CarDisconnected?.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) ?? "";
             var durationMinutes = session.ActualDurationSeconds.HasValue 
-                ? (session.ActualDurationSeconds.Value / 60).ToString(CultureInfo.InvariantCulture)
+                ? (session.ActualDurationSeconds.Value / 60).ToString(culture)
                 : "";
-            // Use comma as decimal separator for European locales to prevent Excel date interpretation
-            var energy = session.KiloWattHours.ToString("F2", CultureInfo.InvariantCulture).Replace(".", ",");
+            var energy = session.KiloWattHours.ToString("F2", culture);
             
             csv.AppendLine($"{userName};{startTime};{endTime};{durationMinutes};{energy}");
         }
