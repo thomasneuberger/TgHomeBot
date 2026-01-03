@@ -94,8 +94,8 @@ public class DetailedReportCsvGeneratorTests
         Assert.That(csvText, Does.Contain("User;Start;End;Duration (minutes);Energy (kWh)"));
         Assert.That(csvText, Does.Contain("Test User 1"));
         Assert.That(csvText, Does.Contain("Test User 2"));
-        Assert.That(csvText, Does.Contain("25.50"));
-        Assert.That(csvText, Does.Contain("30.20"));
+        Assert.That(csvText, Does.Contain("25,50"));
+        Assert.That(csvText, Does.Contain("30,20"));
     }
 
     [Test]
@@ -207,6 +207,6 @@ public class DetailedReportCsvGeneratorTests
         Assert.That(csvData, Is.Not.Null);
         Assert.That(csvData.Length, Is.GreaterThan(0));
         Assert.That(csvText, Does.Contain("Test User"));
-        Assert.That(csvText, Does.Contain("25.50"));
+        Assert.That(csvText, Does.Contain("25,50"));
     }
 }

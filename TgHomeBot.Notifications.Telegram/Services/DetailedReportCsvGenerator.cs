@@ -28,7 +28,8 @@ internal class DetailedReportCsvGenerator : IDetailedReportCsvGenerator
             var durationMinutes = session.ActualDurationSeconds.HasValue 
                 ? (session.ActualDurationSeconds.Value / 60).ToString(CultureInfo.InvariantCulture)
                 : "";
-            var energy = session.KiloWattHours.ToString("F2", CultureInfo.InvariantCulture);
+            // Use comma as decimal separator for European locales to prevent Excel date interpretation
+            var energy = session.KiloWattHours.ToString("F2", CultureInfo.InvariantCulture).Replace(".", ",");
             
             csv.AppendLine($"{userName};{startTime};{endTime};{durationMinutes};{energy}");
         }
