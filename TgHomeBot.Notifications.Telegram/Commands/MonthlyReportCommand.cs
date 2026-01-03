@@ -63,11 +63,6 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
         foreach (var group in monthlyGroups)
         {
             var monthSessions = group.ToList();
-            
-            if (monthSessions.Count == 0)
-            {
-                continue;
-            }
 
             var pdfData = pdfGenerator.GenerateMonthlyPdf(monthSessions, group.Key.Year, group.Key.Month);
             var fileName = pdfGenerator.GetFileName(group.Key.Year, group.Key.Month);

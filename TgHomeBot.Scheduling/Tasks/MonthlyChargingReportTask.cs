@@ -81,11 +81,6 @@ public class MonthlyChargingReportTask : IScheduledTask
             {
                 var monthDate = new DateTime(group.Key.Year, group.Key.Month, 1);
                 var monthSessions = group.ToList();
-                
-                if (monthSessions.Count == 0)
-                {
-                    continue;
-                }
 
                 var pdfData = _pdfGenerator.GenerateMonthlyPdf(monthSessions, group.Key.Year, group.Key.Month);
                 var fileName = _pdfGenerator.GetFileName(group.Key.Year, group.Key.Month);
