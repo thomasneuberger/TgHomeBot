@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using QuestPDF.Infrastructure;
 using Serilog;
 using Serilog.Templates;
 using Serilog.Templates.Themes;
@@ -8,6 +9,9 @@ using TgHomeBot.Common.Contract;
 using TgHomeBot.Notifications.Telegram;
 using TgHomeBot.Scheduling;
 using TgHomeBot.SmartHome.HomeAssistant;
+
+// Configure QuestPDF license
+QuestPDF.Settings.License = LicenseType.Community;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()

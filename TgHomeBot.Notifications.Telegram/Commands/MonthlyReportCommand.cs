@@ -6,6 +6,7 @@ using Telegram.Bot.Types;
 using TgHomeBot.Charging.Contract.Requests;
 using TgHomeBot.Charging.Contract.Services;
 using TgHomeBot.Common.Contract;
+using TgHomeBot.Notifications.Contract.Requests;
 
 namespace TgHomeBot.Notifications.Telegram.Commands;
 
@@ -22,6 +23,7 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
         using var scope = serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         var formatter = scope.ServiceProvider.GetRequiredService<IMonthlyReportFormatter>();
+        var pdfGenerator = scope.ServiceProvider.GetRequiredService<IMonthlyReportPdfGenerator>();
 
         // Get sessions for the last two months
         var to = DateTime.UtcNow.Date;
@@ -50,5 +52,29 @@ internal class MonthlyReportCommand(IServiceProvider serviceProvider, IOptions<A
         var report = formatter.FormatMonthlyReport(sessions);
 
         await client.SendMessage(new ChatId(message.Chat.Id), report, cancellationToken: cancellationToken);
+
+        // Generate and send PDFs for each month that has data
+        var monthlyGroups = sessions
+            .GroupBy(s => new { s.CarConnected.Year, s.CarConnected.Month })
+            .OrderBy(g => g.Key.Year)
+            .ThenBy(g => g.Key.Month)
+            .ToList();
+
+        foreach (var group in monthlyGroups)
+        {
+            var monthSessions = group.ToList();
+            
+            if (monthSessions.Count == 0)
+            {
+                continue;
+            }
+
+            var pdfData = pdfGenerator.GenerateMonthlyPdf(monthSessions, group.Key.Year, group.Key.Month);
+            var fileName = pdfGenerator.GetFileName(group.Key.Year, group.Key.Month);
+            
+            using var stream = new MemoryStream(pdfData);
+            var inputFile = new InputFileStream(stream, fileName);
+            await client.SendDocument(new ChatId(message.Chat.Id), inputFile, cancellationToken: cancellationToken);
+        }
     }
 }
