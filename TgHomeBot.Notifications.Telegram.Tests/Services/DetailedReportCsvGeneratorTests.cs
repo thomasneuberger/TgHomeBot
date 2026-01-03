@@ -91,7 +91,7 @@ public class DetailedReportCsvGeneratorTests
         // Assert
         Assert.That(csvData, Is.Not.Null);
         Assert.That(csvData.Length, Is.GreaterThan(0));
-        Assert.That(csvText, Does.Contain("User,Start,End,Duration (minutes),Energy (kWh)"));
+        Assert.That(csvText, Does.Contain("User;Start;End;Duration (minutes);Energy (kWh)"));
         Assert.That(csvText, Does.Contain("Test User 1"));
         Assert.That(csvText, Does.Contain("Test User 2"));
         Assert.That(csvText, Does.Contain("25.50"));
@@ -154,7 +154,7 @@ public class DetailedReportCsvGeneratorTests
         // Assert
         Assert.That(csvData, Is.Not.Null);
         Assert.That(csvData.Length, Is.GreaterThan(0));
-        Assert.That(csvText, Does.Contain("User,Start,End,Duration (minutes),Energy (kWh)"));
+        Assert.That(csvText, Does.Contain("User;Start;End;Duration (minutes);Energy (kWh)"));
         var lines = csvText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         Assert.That(lines.Length, Is.EqualTo(1)); // Only header
     }
@@ -168,7 +168,7 @@ public class DetailedReportCsvGeneratorTests
             new()
             {
                 UserId = "user1",
-                UserName = "Test, User",
+                UserName = "Test; User",
                 CarConnected = new DateTime(2024, 3, 15, 10, 0, 0),
                 KiloWattHours = 25.5
             }
@@ -179,7 +179,7 @@ public class DetailedReportCsvGeneratorTests
         var csvText = System.Text.Encoding.UTF8.GetString(csvData);
 
         // Assert
-        Assert.That(csvText, Does.Contain("\"Test, User\""));
+        Assert.That(csvText, Does.Contain("\"Test; User\""));
     }
 
     [Test]

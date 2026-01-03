@@ -11,8 +11,8 @@ internal class DetailedReportCsvGenerator : IDetailedReportCsvGenerator
     {
         var csv = new StringBuilder();
         
-        // CSV Header
-        csv.AppendLine("User,Start,End,Duration (minutes),Energy (kWh)");
+        // CSV Header - using semicolon separator for Excel auto-recognition in European locales
+        csv.AppendLine("User;Start;End;Duration (minutes);Energy (kWh)");
         
         // Order by user name and then by car connection timestamp
         var orderedSessions = sessions
@@ -30,7 +30,7 @@ internal class DetailedReportCsvGenerator : IDetailedReportCsvGenerator
                 : "";
             var energy = session.KiloWattHours.ToString("F2", CultureInfo.InvariantCulture);
             
-            csv.AppendLine($"{userName},{startTime},{endTime},{durationMinutes},{energy}");
+            csv.AppendLine($"{userName};{startTime};{endTime};{durationMinutes};{energy}");
         }
         
         return Encoding.UTF8.GetBytes(csv.ToString());
@@ -44,8 +44,8 @@ internal class DetailedReportCsvGenerator : IDetailedReportCsvGenerator
     
     private static string EscapeCsvField(string field)
     {
-        // If field contains comma, quote, or newline, wrap it in quotes and escape internal quotes
-        if (field.Contains(',') || field.Contains('"') || field.Contains('\n') || field.Contains('\r'))
+        // If field contains semicolon, quote, or newline, wrap it in quotes and escape internal quotes
+        if (field.Contains(';') || field.Contains('"') || field.Contains('\n') || field.Contains('\r'))
         {
             return $"\"{field.Replace("\"", "\"\"")}\"";
         }
