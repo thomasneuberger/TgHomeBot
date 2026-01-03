@@ -4,6 +4,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TgHomeBot.Notifications.Contract;
+using TgHomeBot.Notifications.Contract.Requests;
 using TgHomeBot.Notifications.Telegram.Commands;
 using TgHomeBot.Notifications.Telegram.Models;
 using TgHomeBot.Notifications.Telegram.Services;
@@ -233,6 +234,45 @@ internal class TelegramConnector(
 			catch (Exception ex)
 			{
 				logger.LogError(ex, "Failed to send message to chat {ChatId}: {Exception}", registeredChat.ChatId, ex.Message);
+			}
+		}
+	}
+
+	public async Task SendWithFilesAsync(string message, IReadOnlyList<FileAttachment> files, NotificationType notificationType)
+	{
+		if (!_isConnected)
+		{
+			logger.LogWarning("Cannot send message with files - Telegram bot is not connected yet.");
+			return;
+		}
+
+		foreach (var registeredChat in registeredChatService.RegisteredChats)
+		{
+			// Filter based on notification type and feature flags
+			if (!ShouldSendNotification(registeredChat, notificationType))
+			{
+				logger.LogDebug("Skipping notification of type {NotificationType} for chat {ChatId} due to feature flag", notificationType, registeredChat.ChatId);
+				continue;
+			}
+
+			try
+			{
+				// Send the text message
+				await _botClient.SendMessage(registeredChat.ChatId, message, parseMode: ParseMode.Html);
+				
+				// Send each file
+				foreach (var file in files)
+				{
+					using var stream = new MemoryStream(file.Data);
+					var inputFile = new InputFileStream(stream, file.FileName);
+					await _botClient.SendDocument(new ChatId(registeredChat.ChatId), inputFile);
+				}
+				
+				logger.LogInformation("Message and {FileCount} files sent to chat {ChatId} with user {User}", files.Count, registeredChat.ChatId, registeredChat.Username);
+			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Failed to send message with files to chat {ChatId}: {Exception}", registeredChat.ChatId, ex.Message);
 			}
 		}
 	}
