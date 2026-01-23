@@ -78,24 +78,22 @@ public class JackpotReportTask : IScheduledTask
     {
         var message = $"🎰 <b>Eurojackpot Ziehung</b>\n\n";
         
-        // Last draw information
-        message += $"📅 <b>Letzte Ziehung:</b> {FormatDate(lastDraw.Date)}\n";
-        message += $"🔢 Gewinnzahlen: {string.Join(", ", lastDraw.Numbers)}\n";
-        message += $"⭐ Eurozahlen: {string.Join(", ", lastDraw.EuroNumbers)}\n";
-        
-        if (lastDraw.Jackpot > 0)
-        {
-            message += $"💰 Jackpot: {FormatJackpotAmount(lastDraw.Jackpot)}\n";
-        }
-        
         // Next draw information if available
         if (nextDraw != null)
         {
-            message += $"\n📅 <b>Nächste Ziehung:</b> {FormatDate(nextDraw.Date)}\n";
+            message += $"📅 <b>Nächste Ziehung:</b> {FormatDate(nextDraw.Date)}\n";
             if (nextDraw.Jackpot > 0)
             {
                 message += $"💰 Erwarteter Jackpot: {FormatJackpotAmount(nextDraw.Jackpot)}\n";
             }
+        }
+        
+        // Last draw information
+        message += $"\n📅 <b>Letzte Ziehung:</b> {FormatDate(lastDraw.Date)}\n";
+        
+        if (lastDraw.Jackpot > 0)
+        {
+            message += $"💰 Jackpot: {FormatJackpotAmount(lastDraw.Jackpot)}\n";
         }
         
         message += "\nViel Glück! 🍀";
