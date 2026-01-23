@@ -86,10 +86,11 @@ public class JackpotReportTask : IScheduledTask
             {
                 message += $"💰 Erwarteter Jackpot: {FormatJackpotAmount(nextDraw.Jackpot)}\n";
             }
+            message += "\n";
         }
         
         // Last draw information
-        message += $"\n📅 <b>Letzte Ziehung:</b> {FormatDate(lastDraw.Date)}\n";
+        message += $"📅 <b>Letzte Ziehung:</b> {FormatDate(lastDraw.Date)}\n";
         
         if (lastDraw.Jackpot > 0)
         {
