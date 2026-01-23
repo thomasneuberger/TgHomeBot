@@ -188,7 +188,7 @@ public class JackpotReportTaskTests
         }";
 
         var httpMessageHandler = new MockHttpMessageHandler(apiResponse, HttpStatusCode.OK);
-        var httpClient = new HttpClient(httpMessageHandler);
+        using var httpClient = new HttpClient(httpMessageHandler);
         _httpClientFactory.CreateClient().Returns(httpClient);
 
         var task = new JackpotReportTask(_logger, _notificationConnector, _httpClientFactory);
