@@ -164,6 +164,47 @@ public class JackpotReportTaskTests
         await _notificationConnector.DidNotReceive().SendAsync(Arg.Any<string>(), Arg.Any<NotificationType>());
     }
 
+    [Test]
+    public async Task ExecuteAsync_ShouldFormatMessageWithNextDrawFirst()
+    {
+        // Arrange
+        var apiResponse = @"{
+            ""last"": {
+                ""date"": {
+                    ""full"": ""2024-01-15""
+                },
+                ""numbers"": [5, 12, 23, 34, 45],
+                ""euroNumbers"": [3, 7],
+                ""jackpot"": 10
+            },
+            ""next"": {
+                ""date"": {
+                    ""full"": ""2024-01-19""
+                },
+                ""numbers"": [],
+                ""euroNumbers"": [],
+                ""jackpot"": 15
+            }
+        }";
+
+        var httpMessageHandler = new MockHttpMessageHandler(apiResponse, HttpStatusCode.OK);
+        using var httpClient = new HttpClient(httpMessageHandler);
+        _httpClientFactory.CreateClient().Returns(httpClient);
+
+        var task = new JackpotReportTask(_logger, _notificationConnector, _httpClientFactory);
+
+        // Act
+        await task.ExecuteAsync(CancellationToken.None);
+
+        // Assert
+        await _notificationConnector.Received(1).SendAsync(
+            Arg.Is<string>(msg => 
+                msg.IndexOf("Nächste Ziehung") < msg.IndexOf("Letzte Ziehung") && // Next draw comes before last draw
+                !msg.Contains("Gewinnzahlen") && // No winning numbers
+                !msg.Contains("Eurozahlen")),   // No euro numbers
+            NotificationType.Eurojackpot);
+    }
+
     private class MockHttpMessageHandler : HttpMessageHandler
     {
         private readonly string _response;
