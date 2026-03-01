@@ -27,7 +27,7 @@ public class HomeAssistantMonitor(
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly X509Certificate2? _caCertificate = string.IsNullOrEmpty(options.Value.CertificateAuthorityPath)
         ? null
-        : X509CertificateLoader.LoadCertificateFromFile(options.Value.CertificateAuthorityPath);
+        : LoadCertificate(options.Value.CertificateAuthorityPath);
 
     private bool _reconnect;
 
@@ -274,6 +274,15 @@ public class HomeAssistantMonitor(
                 logger.LogError("Unknown event type {Type}: {Event}", eventMessage.Event.EventType, message);
                 break;
         }
+    }
+
+    private static X509Certificate2 LoadCertificate(string path)
+    {
+        using var reader = new StreamReader(path);
+        var firstLine = reader.ReadLine();
+        return firstLine?.Contains("-----BEGIN CERTIFICATE-----") == true
+            ? X509Certificate2.CreateFromPemFile(path)
+            : X509CertificateLoader.LoadCertificateFromFile(path);
     }
 
     private static DeviceState GetState(DeviceStateThresholds deviceThresholds, string state)
