@@ -8,9 +8,11 @@ using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
-internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, HttpClient httpClient, IServiceProvider serviceProvider, ILogger<HomeAssistantMonitor> monitorLogger)
+internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, IHttpClientFactory httpClientFactory, IServiceProvider serviceProvider, ILogger<HomeAssistantMonitor> monitorLogger)
     : ISmartHomeConnector
 {
+    internal const string HttpClientName = "HomeAssistant";
+
     private ISmartHomeMonitor? _smartHomeMonitor;
     private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
@@ -66,6 +68,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, Ht
         var message = new HttpRequestMessage(method, url);
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.Value.Token);
 
+        var httpClient = httpClientFactory.CreateClient(HttpClientName);
         var response = await httpClient.SendAsync(message);
 
         response.EnsureSuccessStatusCode();

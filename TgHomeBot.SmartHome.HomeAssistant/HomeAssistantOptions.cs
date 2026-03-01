@@ -4,4 +4,5 @@ public class HomeAssistantOptions
 {
     public required string BaseUrl { get; set; }
     public required string Token { get; set; }
+    public string? CertificateAuthorityPath { get; set; }
 }
