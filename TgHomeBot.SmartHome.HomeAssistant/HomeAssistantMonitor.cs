@@ -46,7 +46,8 @@ public class HomeAssistantMonitor(
         }
 
         var baseurl = options.Value.BaseUrl.TrimEnd('/');
-        baseurl = "ws" + baseurl[baseurl.IndexOf(':')..];
+        var protocol = _caCertificate is not null ? "wss" : "ws";
+        baseurl = protocol + baseurl[baseurl.IndexOf(':')..];
         var uri = new Uri($"{baseurl}/api/websocket");
 
         // Use startup cancellation token for first attempt only
@@ -88,11 +89,11 @@ public class HomeAssistantMonitor(
             }
             catch (Exception ex)
             {
-                logger.LogError("Error connecting to Home Assistant: [{Type}] {Exception}", ex.GetType().FullName, ex.Message);
+                logger.LogError(ex, "Error connecting to Home Assistant: [{Type}] {Exception}", ex.GetType().FullName, ex.Message);
                 var inner = ex.InnerException;
                 while (inner is not null)
                 {
-                    logger.LogError("Inner exception: [{Type}] {Exception}", inner.GetType().FullName, inner.Message);
+                    logger.LogError(inner, "Inner exception: [{Type}] {Exception}", inner.GetType().FullName, inner.Message);
                     inner = inner.InnerException;
                 }
 
