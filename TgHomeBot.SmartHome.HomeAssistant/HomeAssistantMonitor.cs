@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Net.Security;
 using System.Net.WebSockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +25,9 @@ public class HomeAssistantMonitor(
 {
     private ClientWebSocket? _webSocket;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly X509Certificate2? _caCertificate = string.IsNullOrEmpty(options.Value.CertificateAuthorityPath)
+        ? null
+        : X509CertificateLoader.LoadCertificateFromFile(options.Value.CertificateAuthorityPath);
 
     private bool _reconnect;
 
@@ -53,6 +58,17 @@ public class HomeAssistantMonitor(
             try
             {
                 _webSocket ??= new ClientWebSocket();
+                if (_caCertificate is not null)
+                {
+                    _webSocket.Options.RemoteCertificateValidationCallback = (_, cert, chain, errors) =>
+                    {
+                        if (errors == SslPolicyErrors.None) return true;
+                        if (chain is null || cert is null) return false;
+                        chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+                        chain.ChainPolicy.CustomTrustStore.Add(_caCertificate);
+                        return chain.Build((X509Certificate2)cert);
+                    };
+                }
                 await _webSocket.ConnectAsync(uri, retryToken);
                 break;
             }
