@@ -1,4 +1,5 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+RUN mkdir -m 755 /certs
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
