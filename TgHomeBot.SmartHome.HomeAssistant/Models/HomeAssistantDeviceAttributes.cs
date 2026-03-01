@@ -32,5 +32,5 @@ public class HomeAssistantDeviceAttributes
     public string? DeviceClass { get; init; }
 
     [JsonPropertyName("friendly_name")]
-    public required string FriendlyName { get; init; }
+    public string? FriendlyName { get; init; }
 }

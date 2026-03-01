@@ -81,7 +81,7 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, IH
         return new SmartDevice
         {
             Id = d.EntityId,
-            Name = name ?? d.Attributes.FriendlyName,
+            Name = name ?? d.Attributes.FriendlyName ?? d.EntityId,
             State = string.IsNullOrWhiteSpace(d.Attributes.UnitOfMeasurement) ? d.State : $"{d.State} {d.Attributes.UnitOfMeasurement}"
         };
     }
