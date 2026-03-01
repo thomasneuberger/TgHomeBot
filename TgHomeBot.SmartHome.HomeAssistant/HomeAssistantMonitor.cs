@@ -27,7 +27,7 @@ public class HomeAssistantMonitor(
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly X509Certificate2? _caCertificate = string.IsNullOrEmpty(options.Value.CertificateAuthorityPath)
         ? null
-        : LoadCertificate(options.Value.CertificateAuthorityPath);
+        : CertificateHelper.LoadCertificate(options.Value.CertificateAuthorityPath);
 
     private bool _reconnect;
 
@@ -276,33 +276,6 @@ public class HomeAssistantMonitor(
         }
     }
 
-    private static X509Certificate2 LoadCertificate(string path)
-    {
-        const int maxScanLines = 50;
-        var isPem = false;
-
-        using (var reader = new StreamReader(path))
-        {
-            string? line;
-            var linesRead = 0;
-
-            while (linesRead < maxScanLines && (line = reader.ReadLine()) is not null)
-            {
-                linesRead++;
-
-                if (line.Contains("-----BEGIN CERTIFICATE-----", StringComparison.Ordinal))
-                {
-                    isPem = true;
-                    break;
-                }
-            }
-        }
-
-        return isPem
-            ? X509Certificate2.CreateFromPemFile(path)
-            : X509CertificateLoader.LoadCertificateFromFile(path);
-    }
-
     private static DeviceState GetState(DeviceStateThresholds deviceThresholds, string state)
     {
         if (!float.TryParse(state, out var value))
@@ -353,5 +326,6 @@ public class HomeAssistantMonitor(
         _cancellationTokenSource.Cancel();
         _webSocket?.Dispose();
         _cancellationTokenSource.Dispose();
+        _caCertificate?.Dispose();
     }
 }
