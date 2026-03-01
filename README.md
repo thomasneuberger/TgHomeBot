@@ -48,3 +48,20 @@ List all registered chats with their feature flags:
 Returns an array of chat objects with IDs and flag states.
 
 **Note**: Manual trigger commands like `/monthlyreport` that respond directly to the requesting user bypass feature flags. However, when running scheduled tasks via `/runtask` command or API endpoints, feature flags are respected.
+
+## Docker Certificate Setup
+
+When running in Docker and Home Assistant uses a self-signed or custom CA certificate, mount the certificate and set the path via environment variable:
+
+```yaml
+volumes:
+  - ../certs/root_ca.crt:/certs/root_ca.crt:ro
+environment:
+  - HomeAssistant__CertificateAuthorityPath=/certs/root_ca.crt
+```
+
+The certificate file must be readable by all users on the host (world-readable), otherwise the container's non-root app user will be denied access:
+
+```bash
+chmod a+r /path/to/root_ca.crt
+```
