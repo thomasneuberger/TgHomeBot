@@ -24,7 +24,7 @@ public static class Bootstrap
                 var handler = new HttpClientHandler();
                 if (!string.IsNullOrEmpty(options.CertificateAuthorityPath))
                 {
-                    var certificate = X509CertificateLoader.LoadCertificateFromFile(options.CertificateAuthorityPath);
+                    var certificate = CertificateHelper.LoadCertificate(options.CertificateAuthorityPath);
                     handler.ServerCertificateCustomValidationCallback = (_, cert, chain, errors) =>
                     {
                         if (errors == SslPolicyErrors.None) return true;

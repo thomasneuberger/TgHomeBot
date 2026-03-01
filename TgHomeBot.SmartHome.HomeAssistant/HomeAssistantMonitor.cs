@@ -27,7 +27,7 @@ public class HomeAssistantMonitor(
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly X509Certificate2? _caCertificate = string.IsNullOrEmpty(options.Value.CertificateAuthorityPath)
         ? null
-        : X509CertificateLoader.LoadCertificateFromFile(options.Value.CertificateAuthorityPath);
+        : CertificateHelper.LoadCertificate(options.Value.CertificateAuthorityPath);
 
     private bool _reconnect;
 
@@ -326,5 +326,6 @@ public class HomeAssistantMonitor(
         _cancellationTokenSource.Cancel();
         _webSocket?.Dispose();
         _cancellationTokenSource.Dispose();
+        _caCertificate?.Dispose();
     }
 }
