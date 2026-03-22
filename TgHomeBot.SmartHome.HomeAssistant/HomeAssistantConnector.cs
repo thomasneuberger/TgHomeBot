@@ -67,19 +67,28 @@ internal class HomeAssistantConnector(
         }
     }
 
-    public async Task<bool> EnsureMonitorIsRunning()
+    public async Task<bool> EnsureMonitorIsRunning(CancellationToken cancellationToken)
     {
         try
         {
-            switch (_smartHomeMonitor?.State)
+            await _semaphore.WaitAsync(cancellationToken);
+            try
             {
-                case MonitorState.Idle:
-                    await _smartHomeMonitor.StartMonitoringAsync(CancellationToken.None);
-                    return true;
-                case MonitorState.Listening:
-                    return true;
-                default:
-                    return false;
+                switch (_smartHomeMonitor?.State)
+                {
+                    case MonitorState.Idle:
+                    case MonitorState.Unknown:
+                        await _smartHomeMonitor!.StartMonitoringAsync(cancellationToken);
+                        return true;
+                    case MonitorState.Listening:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
         catch (Exception e)

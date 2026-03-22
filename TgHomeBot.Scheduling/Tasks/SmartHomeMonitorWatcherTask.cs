@@ -14,7 +14,17 @@ public class SmartHomeMonitorWatcherTask(ILogger<SmartHomeMonitorWatcherTask> lo
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var isRunning = await smartHomeConnector.EnsureMonitorIsRunning();
-        logger.LogInformation("Smart Home Monitor is running: {IsRunning}", isRunning);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var isRunning = await smartHomeConnector.EnsureMonitorIsRunning(cancellationToken).ConfigureAwait(false);
+
+        if (!isRunning)
+        {
+            logger.LogWarning("Smart Home Monitor is not running and could not be started.");
+        }
+        else
+        {
+            logger.LogDebug("Smart Home Monitor is running.");
+        }
     }
 }
