@@ -17,6 +17,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: write
 
     steps:
     - uses: actions/checkout@v4
@@ -53,6 +54,14 @@ jobs:
         push: true
         tags: ${{ steps.metaApi.outputs.tags }}
         labels: ${{ steps.metaApi.outputs.labels }}
+
+    - name: Generate SBOM
+      uses: anchore/sbom-action@0c39f226e1aa89d60625e475bb6270a458861361
+      with:
+        image: ${{ env.REGISTRY }}/thomasneuberger/tghomebot-api:${{ steps.imageTag.outputs.tag }}
+        artifact-name: sbom-${{ steps.imageTag.outputs.tag }}.spdx.json
+        output-file: sbom.spdx.json
+        format: spdx-json
 
     - name: Output image tag
       run: echo "Image tag ${{ steps.imageTag.outputs.tag }} published" >> $GITHUB_STEP_SUMMARY
