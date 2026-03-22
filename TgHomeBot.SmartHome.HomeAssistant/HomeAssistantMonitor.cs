@@ -152,7 +152,7 @@ public class HomeAssistantMonitor(
                 logger.LogError(ex, "Error receiving message from Home Assistant web socket: {Exception}", ex.Message);
             }
         }
-        logger.LogWarning("Home Assistant Web socket has been closed.");
+        logger.LogWarning("Home Assistant Web socket has been closed. Reconnect: {Reconnect}", _reconnect);
         if (_reconnect)
         {
             while (_webSocket is null || _webSocket.State == WebSocketState.Closed)
