@@ -58,7 +58,7 @@ jobs:
         labels: ${{ steps.metaApi.outputs.labels }}
 
     - name: Generate SBOM
-      uses: anchore/sbom-action@v0.17.2
+      uses: anchore/sbom-action@0c39f226e1aa89d60625e475bb6270a458861361
       with:
         image: ${{ env.REGISTRY }}/thomasneuberger/tghomebot-api:${{ steps.imageTag.outputs.tag }}
         artifact-name: sbom-${{ steps.imageTag.outputs.tag }}.spdx.json
