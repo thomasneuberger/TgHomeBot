@@ -172,6 +172,25 @@ The task generates a summary of EV charging sessions from the last two months, g
 - Formatted in German with month names
 - Sent to all registered Telegram chats (respects the MonthlyChargingReport feature flag)
 
+### SmartHomeMonitorWatcherTask
+
+A scheduled task that ensures the Smart Home Monitor is running by periodically checking and restarting it if needed:
+
+Configuration file (`SmartHomeMonitorWatcherTask.json`):
+```json
+{
+  "taskType": "SmartHomeMonitorWatcherTask",
+  "cronExpression": "*/5 * * * *",
+  "enabled": true
+}
+```
+
+The task runs every 5 minutes and:
+- Checks if the Smart Home Monitor is running
+- Automatically restarts the monitor if it has stopped
+- Logs the current status of the monitor
+- Ensures continuous monitoring of smart home devices for state changes
+
 ## Integration
 
 To integrate the scheduler into your application:

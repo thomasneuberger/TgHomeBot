@@ -8,7 +8,12 @@ using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant;
 
-internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, IHttpClientFactory httpClientFactory, IServiceProvider serviceProvider, ILogger<HomeAssistantMonitor> monitorLogger)
+internal class HomeAssistantConnector(
+    IOptions<HomeAssistantOptions> options,
+    IHttpClientFactory httpClientFactory,
+    IServiceProvider serviceProvider,
+    ILogger<HomeAssistantMonitor> monitorLogger,
+    ILogger<HomeAssistantConnector> logger)
     : ISmartHomeConnector
 {
     internal const string HttpClientName = "HomeAssistant";
@@ -59,6 +64,37 @@ internal class HomeAssistantConnector(IOptions<HomeAssistantOptions> options, IH
         finally
         {
             _semaphore.Release();
+        }
+    }
+
+    public async Task<bool> EnsureMonitorIsRunning(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                switch (_smartHomeMonitor?.State)
+                {
+                    case MonitorState.Idle:
+                    case MonitorState.Unknown:
+                        await _smartHomeMonitor!.StartMonitoringAsync(cancellationToken);
+                        return true;
+                    case MonitorState.Listening:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error ensuring Home Assistant monitor is running");
+            return false;
         }
     }
 
