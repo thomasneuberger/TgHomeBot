@@ -33,7 +33,12 @@ internal class HomeAssistantConnector(
         try
         {
             var response = await CallApi($"states/{entityId}", HttpMethod.Get);
-            var device = JsonSerializer.Deserialize<HomeAssistantDevice>(response)!;
+            var device = JsonSerializer.Deserialize<HomeAssistantDevice>(response);
+            if (device is null)
+            {
+                monitorLogger.LogError("Failed to deserialize device {DeviceId}", entityId);
+                return null;
+            }
             return ConvertDevice(device);
         }
         catch (Exception ex)
