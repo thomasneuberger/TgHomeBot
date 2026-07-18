@@ -251,6 +251,15 @@ public class HomeAssistantMonitor(
                         if (oldState == DeviceState.Running && (newState != DeviceState.Running))
                         {
                             using var scope = serviceProvider.CreateScope();
+                            if (!await IsConditionMetAsync(monitoredDevice, scope.ServiceProvider))
+                            {
+                                logger.LogInformation(
+                                    "Condition device {ConditionDeviceId} is not active, skipping notification for {Device}",
+                                    monitoredDevice.ConditionDeviceId,
+                                    monitoredDevice.Name);
+                                break;
+                            }
+
                             var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
                             await mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist fertig.", NotificationType.DeviceNotification));
                         }
@@ -296,6 +305,18 @@ public class HomeAssistantMonitor(
 
         return DeviceState.Waiting;
 
+    }
+
+    internal async Task<bool> IsConditionMetAsync(MonitoredDevice device, IServiceProvider serviceProvider)
+    {
+        if (string.IsNullOrEmpty(device.ConditionDeviceId))
+        {
+            return true;
+        }
+
+        var connector = serviceProvider.GetRequiredService<ISmartHomeConnector>();
+        var conditionDevice = await connector.GetDevice(device.ConditionDeviceId);
+        return conditionDevice?.State.Equals("on", StringComparison.OrdinalIgnoreCase) == true;
     }
 
     private async Task SendMessageAsync<TMessage>(TMessage message)
