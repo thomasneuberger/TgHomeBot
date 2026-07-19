@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 using System.Net.Security;
 using System.Net.WebSockets;
 using System.Security.Cryptography.X509Certificates;
@@ -264,6 +265,7 @@ public class HomeAssistantMonitor(
                         }
                         else if (monitoredDevice.StateThresholds.RunningThreshold.HasValue != monitoredDevice.StateThresholds.OffThreshold.HasValue)
                         {
+                            // Exactly one of the pair is set — both must be configured together
                             logger.LogWarning(
                                 "Device {Device} has only one of RunningThreshold/OffThreshold configured. Both must be set together.",
                                 monitoredDevice.Name);
@@ -351,7 +353,7 @@ public class HomeAssistantMonitor(
     }
 
     private static bool TryParseStateValue(string state, out float value) =>
-        float.TryParse(state, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out value);
+        float.TryParse(state, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
 
     internal async Task<bool> IsConditionMetAsync(MonitoredDevice device, IServiceProvider serviceProvider)
     {
