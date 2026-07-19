@@ -238,30 +238,70 @@ public class HomeAssistantMonitor(
                 {
                     if (monitoredDevice.StateThresholds is not null)
                     {
-                        var oldState = GetState(monitoredDevice.StateThresholds, stateChangedEvent.Event.Data.OldState.State);
-                        var newState = GetState(monitoredDevice.StateThresholds, stateChangedEvent.Event.Data.NewState.State);
-                        logger.LogInformation(
-                            "Device {Device} changed state from {OldStateValue} ({OldState}) to {NewStateValue} ({NewState})",
-                            monitoredDevice.Name,
-                            stateChangedEvent.Event.Data.OldState.State,
-                            oldState,
-                            stateChangedEvent.Event.Data.NewState.State,
-                            newState);
+                        var oldStateRaw = stateChangedEvent.Event.Data.OldState.State;
+                        var newStateRaw = stateChangedEvent.Event.Data.NewState.State;
 
-                        if (oldState == DeviceState.Running && (newState != DeviceState.Running))
+                        if (monitoredDevice.StateThresholds.RunningThreshold.HasValue &&
+                            monitoredDevice.StateThresholds.OffThreshold.HasValue)
                         {
-                            using var scope = serviceProvider.CreateScope();
-                            if (!await IsConditionMetAsync(monitoredDevice, scope.ServiceProvider))
+                            var runningThreshold = monitoredDevice.StateThresholds.RunningThreshold.Value;
+                            var offThreshold = monitoredDevice.StateThresholds.OffThreshold.Value;
+                            var oldState = GetState(runningThreshold, offThreshold, oldStateRaw);
+                            var newState = GetState(runningThreshold, offThreshold, newStateRaw);
+                            logger.LogInformation(
+                                "Device {Device} changed state from {OldStateValue} ({OldState}) to {NewStateValue} ({NewState})",
+                                monitoredDevice.Name,
+                                oldStateRaw,
+                                oldState,
+                                newStateRaw,
+                                newState);
+
+                            if (oldState == DeviceState.Running && (newState != DeviceState.Running))
+                            {
+                                using var scope = serviceProvider.CreateScope();
+                                if (!await IsConditionMetAsync(monitoredDevice, scope.ServiceProvider))
+                                {
+                                    logger.LogInformation(
+                                        "Condition device {ConditionDeviceId} is not active, skipping notification for {Device}",
+                                        monitoredDevice.ConditionDeviceId,
+                                        monitoredDevice.Name);
+                                    break;
+                                }
+
+                                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                                await mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist fertig.", NotificationType.DeviceNotification));
+                            }
+                        }
+
+                        if (monitoredDevice.StateThresholds.AboveThreshold.HasValue)
+                        {
+                            var aboveThreshold = monitoredDevice.StateThresholds.AboveThreshold.Value;
+                            if (float.TryParse(oldStateRaw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var oldValue) &&
+                                float.TryParse(newStateRaw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var newValue))
                             {
                                 logger.LogInformation(
-                                    "Condition device {ConditionDeviceId} is not active, skipping notification for {Device}",
-                                    monitoredDevice.ConditionDeviceId,
-                                    monitoredDevice.Name);
-                                break;
-                            }
+                                    "Device {Device} changed value from {OldValue} to {NewValue} (AboveThreshold: {Threshold})",
+                                    monitoredDevice.Name,
+                                    oldValue,
+                                    newValue,
+                                    aboveThreshold);
 
-                            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                            await mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist fertig.", NotificationType.DeviceNotification));
+                                if (oldValue < aboveThreshold && newValue >= aboveThreshold)
+                                {
+                                    using var scope = serviceProvider.CreateScope();
+                                    if (!await IsConditionMetAsync(monitoredDevice, scope.ServiceProvider))
+                                    {
+                                        logger.LogInformation(
+                                            "Condition device {ConditionDeviceId} is not active, skipping notification for {Device}",
+                                            monitoredDevice.ConditionDeviceId,
+                                            monitoredDevice.Name);
+                                        break;
+                                    }
+
+                                    var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                                    await mediator.Send(new NotifyRequest($"{monitoredDevice.Name} ist aktiv.", NotificationType.DeviceNotification));
+                                }
+                            }
                         }
                     }
                     else
@@ -286,19 +326,19 @@ public class HomeAssistantMonitor(
         }
     }
 
-    private static DeviceState GetState(DeviceStateThresholds deviceThresholds, string state)
+    internal static DeviceState GetState(float runningThreshold, float offThreshold, string state)
     {
-        if (!float.TryParse(state, out var value))
+        if (!float.TryParse(state, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value))
         {
             return DeviceState.Unknown;
         }
 
-        if (value > deviceThresholds.RunningThreshold)
+        if (value > runningThreshold)
         {
             return DeviceState.Running;
         }
 
-        if (value < deviceThresholds.OffThreshold)
+        if (value < offThreshold)
         {
             return DeviceState.Off;
         }

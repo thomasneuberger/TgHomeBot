@@ -5,6 +5,7 @@ using NSubstitute;
 using NUnit.Framework;
 using TgHomeBot.SmartHome.Contract;
 using TgHomeBot.SmartHome.Contract.Models;
+using TgHomeBot.SmartHome.HomeAssistant.Models;
 
 namespace TgHomeBot.SmartHome.HomeAssistant.Tests;
 
@@ -37,16 +38,15 @@ public class HomeAssistantMonitorTests
             Substitute.For<ILogger<HomeAssistantMonitor>>());
     }
 
+    // --- IsConditionMetAsync tests ---
+
     [Test]
     public async Task IsConditionMetAsync_WhenNoConditionDeviceConfigured_ReturnsTrue()
     {
-        // Arrange
         var device = new MonitoredDevice { Id = "switch.washer", Name = "Washer" };
 
-        // Act
         var result = await _monitor.IsConditionMetAsync(device, _serviceProvider);
 
-        // Assert
         Assert.That(result, Is.True);
         await _connector.DidNotReceive().GetDevice(Arg.Any<string>());
     }
@@ -54,101 +54,121 @@ public class HomeAssistantMonitorTests
     [Test]
     public async Task IsConditionMetAsync_WhenConditionDeviceIsOn_ReturnsTrue()
     {
-        // Arrange
-        var device = new MonitoredDevice
-        {
-            Id = "switch.washer",
-            Name = "Washer",
-            ConditionDeviceId = "binary_sensor.someone_home"
-        };
+        var device = new MonitoredDevice { Id = "switch.washer", Name = "Washer", ConditionDeviceId = "binary_sensor.someone_home" };
         _connector.GetDevice("binary_sensor.someone_home")
             .Returns(Task.FromResult<SmartDevice?>(new SmartDevice { Id = "binary_sensor.someone_home", Name = "Someone home", State = "on" }));
 
-        // Act
         var result = await _monitor.IsConditionMetAsync(device, _serviceProvider);
 
-        // Assert
         Assert.That(result, Is.True);
     }
 
     [Test]
     public async Task IsConditionMetAsync_WhenConditionDeviceIsOff_ReturnsFalse()
     {
-        // Arrange
-        var device = new MonitoredDevice
-        {
-            Id = "switch.washer",
-            Name = "Washer",
-            ConditionDeviceId = "binary_sensor.someone_home"
-        };
+        var device = new MonitoredDevice { Id = "switch.washer", Name = "Washer", ConditionDeviceId = "binary_sensor.someone_home" };
         _connector.GetDevice("binary_sensor.someone_home")
             .Returns(Task.FromResult<SmartDevice?>(new SmartDevice { Id = "binary_sensor.someone_home", Name = "Someone home", State = "off" }));
 
-        // Act
         var result = await _monitor.IsConditionMetAsync(device, _serviceProvider);
 
-        // Assert
         Assert.That(result, Is.False);
     }
 
     [Test]
     public async Task IsConditionMetAsync_WhenConditionDeviceIsOnCaseInsensitive_ReturnsTrue()
     {
-        // Arrange
-        var device = new MonitoredDevice
-        {
-            Id = "switch.washer",
-            Name = "Washer",
-            ConditionDeviceId = "binary_sensor.someone_home"
-        };
+        var device = new MonitoredDevice { Id = "switch.washer", Name = "Washer", ConditionDeviceId = "binary_sensor.someone_home" };
         _connector.GetDevice("binary_sensor.someone_home")
             .Returns(Task.FromResult<SmartDevice?>(new SmartDevice { Id = "binary_sensor.someone_home", Name = "Someone home", State = "ON" }));
 
-        // Act
         var result = await _monitor.IsConditionMetAsync(device, _serviceProvider);
 
-        // Assert
         Assert.That(result, Is.True);
     }
 
     [Test]
     public async Task IsConditionMetAsync_WhenConditionDeviceNotFound_ReturnsFalse()
     {
-        // Arrange
-        var device = new MonitoredDevice
-        {
-            Id = "switch.washer",
-            Name = "Washer",
-            ConditionDeviceId = "binary_sensor.someone_home"
-        };
+        var device = new MonitoredDevice { Id = "switch.washer", Name = "Washer", ConditionDeviceId = "binary_sensor.someone_home" };
         _connector.GetDevice("binary_sensor.someone_home")
             .Returns(Task.FromResult<SmartDevice?>(null));
 
-        // Act
         var result = await _monitor.IsConditionMetAsync(device, _serviceProvider);
 
-        // Assert
         Assert.That(result, Is.False);
     }
 
     [Test]
     public async Task IsConditionMetAsync_QueriesConditionDeviceWithCorrectId()
     {
-        // Arrange
         var conditionDeviceId = "binary_sensor.someone_home";
-        var device = new MonitoredDevice
-        {
-            Id = "switch.washer",
-            Name = "Washer",
-            ConditionDeviceId = conditionDeviceId
-        };
-        _connector.GetDevice(conditionDeviceId)
-            .Returns(Task.FromResult<SmartDevice?>(null));
+        var device = new MonitoredDevice { Id = "switch.washer", Name = "Washer", ConditionDeviceId = conditionDeviceId };
+        _connector.GetDevice(conditionDeviceId).Returns(Task.FromResult<SmartDevice?>(null));
 
-        // Act
         await _monitor.IsConditionMetAsync(device, _serviceProvider);
 
-        // Assert
         await _connector.Received(1).GetDevice(conditionDeviceId);
+    }
+
+    // --- GetState tests ---
+
+    [Test]
+    public void GetState_WhenValueAboveRunningThreshold_ReturnsRunning()
+    {
+        var result = HomeAssistantMonitor.GetState(runningThreshold: 10f, offThreshold: 2f, state: "15");
+
+        Assert.That(result, Is.EqualTo(DeviceState.Running));
+    }
+
+    [Test]
+    public void GetState_WhenValueBelowOffThreshold_ReturnsOff()
+    {
+        var result = HomeAssistantMonitor.GetState(runningThreshold: 10f, offThreshold: 2f, state: "1");
+
+        Assert.That(result, Is.EqualTo(DeviceState.Off));
+    }
+
+    [Test]
+    public void GetState_WhenValueBetweenThresholds_ReturnsWaiting()
+    {
+        var result = HomeAssistantMonitor.GetState(runningThreshold: 10f, offThreshold: 2f, state: "5");
+
+        Assert.That(result, Is.EqualTo(DeviceState.Waiting));
+    }
+
+    [Test]
+    public void GetState_WhenStateIsNotNumeric_ReturnsUnknown()
+    {
+        var result = HomeAssistantMonitor.GetState(runningThreshold: 10f, offThreshold: 2f, state: "unavailable");
+
+        Assert.That(result, Is.EqualTo(DeviceState.Unknown));
+    }
+
+    // --- AboveThreshold configuration tests ---
+
+    [Test]
+    public void DeviceStateThresholds_CanConfigureAboveThresholdAlone()
+    {
+        var thresholds = new DeviceStateThresholds { AboveThreshold = 5f };
+
+        Assert.That(thresholds.AboveThreshold, Is.EqualTo(5f));
+        Assert.That(thresholds.RunningThreshold, Is.Null);
+        Assert.That(thresholds.OffThreshold, Is.Null);
+    }
+
+    [Test]
+    public void DeviceStateThresholds_CanConfigureAllThresholds()
+    {
+        var thresholds = new DeviceStateThresholds
+        {
+            RunningThreshold = 10f,
+            OffThreshold = 2f,
+            AboveThreshold = 5f
+        };
+
+        Assert.That(thresholds.RunningThreshold, Is.EqualTo(10f));
+        Assert.That(thresholds.OffThreshold, Is.EqualTo(2f));
+        Assert.That(thresholds.AboveThreshold, Is.EqualTo(5f));
     }
 }
