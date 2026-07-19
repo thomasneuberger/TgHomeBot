@@ -28,6 +28,26 @@ internal class HomeAssistantConnector(
         return devices.Select(d => ConvertDevice(d)).ToArray();
     }
 
+    public async Task<SmartDevice?> GetDevice(string entityId)
+    {
+        try
+        {
+            var response = await CallApi($"states/{entityId}", HttpMethod.Get);
+            var device = JsonSerializer.Deserialize<HomeAssistantDevice>(response);
+            if (device is null)
+            {
+                monitorLogger.LogError("Failed to deserialize device {DeviceId}", entityId);
+                return null;
+            }
+            return ConvertDevice(device);
+        }
+        catch (Exception ex)
+        {
+            monitorLogger.LogError(ex, "Error retrieving status of device {DeviceId}", entityId);
+            return null;
+        }
+    }
+
     public async Task<IReadOnlyList<SmartDevice>> GetDevices(IReadOnlyList<MonitoredDevice> requestedDevices)
     {
         var devices = new List<SmartDevice>();
