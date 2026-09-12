@@ -131,7 +131,7 @@ public class MonthlyChargingReportTask : IScheduledTask
     {
         try
         {
-            await _notificationConnector.SendAsync(AuthenticationReminderMessage, NotificationType.General);
+            await _notificationConnector.SendAsync(AuthenticationReminderMessage, NotificationType.MonthlyChargingReport);
         }
         catch (Exception ex)
         {
