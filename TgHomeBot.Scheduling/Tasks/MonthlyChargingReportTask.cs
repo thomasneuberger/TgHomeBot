@@ -14,6 +14,9 @@ namespace TgHomeBot.Scheduling.Tasks;
 /// </summary>
 public class MonthlyChargingReportTask : IScheduledTask
 {
+    private const string MissingAuthenticationError = "Nicht mit Easee API authentifiziert";
+    private const string AuthenticationReminderMessage = "Der monatliche Ladebericht konnte nicht erstellt werden. Bitte bei Easee authentifizieren.";
+
     private readonly ILogger<MonthlyChargingReportTask> _logger;
     private readonly INotificationConnector _notificationConnector;
     private readonly IMediator _mediator;
@@ -54,6 +57,12 @@ public class MonthlyChargingReportTask : IScheduledTask
             if (!result.Success)
             {
                 _logger.LogError("Failed to fetch charging sessions: {ErrorMessage}", result.ErrorMessage);
+
+                if (IsMissingAuthenticationError(result.ErrorMessage))
+                {
+                    await SendAuthenticationReminderAsync();
+                }
+
                 return;
             }
 
@@ -110,8 +119,29 @@ public class MonthlyChargingReportTask : IScheduledTask
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error executing monthly charging report task");
+
+            if (IsMissingAuthenticationError(ex.Message))
+            {
+                await SendAuthenticationReminderAsync();
+            }
         }
     }
+
+    private async Task SendAuthenticationReminderAsync()
+    {
+        try
+        {
+            await _notificationConnector.SendAsync(AuthenticationReminderMessage, NotificationType.MonthlyChargingReport);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send authentication reminder notification");
+        }
+    }
+
+    private static bool IsMissingAuthenticationError(string? errorMessage) =>
+        !string.IsNullOrWhiteSpace(errorMessage)
+        && errorMessage.Contains(MissingAuthenticationError, StringComparison.OrdinalIgnoreCase);
 
     private async Task SavePdfToStorage(string fileName, byte[] pdfData)
     {
