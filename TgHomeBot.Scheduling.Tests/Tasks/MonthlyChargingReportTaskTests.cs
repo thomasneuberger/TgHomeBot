@@ -56,7 +56,7 @@ public class MonthlyChargingReportTaskTests
         // Assert
         await _notificationConnector.Received(1).SendAsync(
             Arg.Is<string>(message => message.Contains("Bitte bei Easee authentifizieren")),
-            NotificationType.General);
+            NotificationType.MonthlyChargingReport);
 
         await _notificationConnector.DidNotReceive().SendWithFilesAsync(
             Arg.Any<string>(),
